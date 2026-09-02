@@ -25,7 +25,7 @@ test("server-renders the landing page with working destinations", async () => {
   assert.match(html, /href="\/kalkulator"/);
   assert.match(html, /id="ranking"/);
   assert.match(html, /id="faq"/);
-  assert.match(html, /\/og-v2\.png/);
+  assert.match(html, /\/og-v2\.jpg/);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape|react-loading-skeleton/i);
 });
 
@@ -39,7 +39,7 @@ test("server-renders the pipsy calculator at its own route", async () => {
   assert.match(html, /Porównanie ofert/);
   assert.match(html, /Negocjacja/);
   assert.match(html, /375[\s\u00a0]170,00 zł/);
-  assert.match(html, /https:\/\/pipsy\.pl\/og-v2\.png/);
+  assert.match(html, /https:\/\/pipsy\.pl\/og-v2\.jpg/);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape|react-loading-skeleton/i);
 });
 

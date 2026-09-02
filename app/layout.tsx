@@ -6,7 +6,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const requestHeaders = await headers();
   const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "pipsy.pl";
   const protocol = requestHeaders.get("x-forwarded-proto") ?? (host.includes("localhost") ? "http" : "https");
-  const imageUrl = `${protocol}://${host}/og-v2.png`;
+  const imageUrl = `${protocol}://${host}/og-v2.jpg`;
   const title = "Kalkulator negocjacji kursów walut i ranking kantorów — pipsy.pl";
   const description = "Policz koszt całkowity wymiany walut w PLN, porównaj typy kantorów i banków oraz przygotuj konkretny cel negocjacyjny.";
 
