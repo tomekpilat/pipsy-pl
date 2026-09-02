@@ -1,3 +1,5 @@
+"use client";
+
 const Logo = () => (
   <span className="site-brand-mark" aria-hidden="true"><i /><i /><i /></span>
 );
@@ -51,11 +53,11 @@ export default function Home() {
           <details className="mobile-menu">
             <summary aria-label="Otwórz menu"><span>Menu</span><i aria-hidden="true" /></summary>
             <nav aria-label="Nawigacja mobilna">
-              <a href="#ranking">Ranking</a>
-              <a href="#baza">Baza wiedzy</a>
-              <a href="#artykuly">Artykuły</a>
-              <a href="#faq">FAQ</a>
-              <a className="mobile-menu-cta" href="/kalkulator">Otwórz kalkulator</a>
+              <a href="#ranking" onClick={(event) => event.currentTarget.closest("details")?.removeAttribute("open")}>Ranking</a>
+              <a href="#baza" onClick={(event) => event.currentTarget.closest("details")?.removeAttribute("open")}>Baza wiedzy</a>
+              <a href="#artykuly" onClick={(event) => event.currentTarget.closest("details")?.removeAttribute("open")}>Artykuły</a>
+              <a href="#faq" onClick={(event) => event.currentTarget.closest("details")?.removeAttribute("open")}>FAQ</a>
+              <a className="mobile-menu-cta" href="/kalkulator" onClick={(event) => event.currentTarget.closest("details")?.removeAttribute("open")}>Otwórz kalkulator</a>
             </nav>
           </details>
         </div>

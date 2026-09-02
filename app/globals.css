@@ -16,7 +16,7 @@
 
 * { box-sizing: border-box; }
 html { background: var(--canvas); }
-body { margin: 0; background: var(--canvas); color: var(--ink); font-family: "IBM Plex Sans", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+body { margin: 0; overflow-x: clip; background: var(--canvas); color: var(--ink); font-family: "IBM Plex Sans", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
 button, input, select { color: inherit; font: inherit; }
 button, select { cursor: pointer; }
 button:disabled { cursor: not-allowed; opacity: .35; }
@@ -157,32 +157,41 @@ input[type="number"]::-webkit-inner-spin-button { appearance: none; }
 
 @media (max-width: 720px) {
   .app-shell { display: block; }
-  .control-panel { position: relative; width: 100%; height: auto; min-height: 0; overflow: visible; padding: 20px; border-right: 0; border-bottom: 1px solid var(--line); }
-  .workspace { padding: 20px 16px 36px; }
+  .control-panel { position: relative; width: 100%; height: auto; min-height: 0; overflow: visible; padding: 18px 16px; gap: 16px; border-right: 0; border-bottom: 1px solid var(--line); }
+  .workspace { padding: 18px 12px 36px; gap: 16px; }
   .brand { margin-bottom: 2px; }
-  .offer-fields { grid-template-columns: repeat(2,minmax(0,1fr)); }
-  .offer-result { padding: 0 16px 14px; }
-  .offer-result strong { font-size: 24px; }
-  .negotiation { position: sticky; bottom: 0; z-index: 5; margin-inline: -8px; max-height: calc(100vh - 20px); overflow: auto; box-shadow: 0 -8px 24px rgba(23,27,34,.18); }
-  .script-card blockquote { font-size: 16px; }
-}
-
-@media (max-width: 430px) {
-  .workspace { padding-inline: 12px; }
+  .subtle-button, .header-actions select, .primary-button, .offer-actions button, .app-footer button { min-height: 44px; }
+  .amount-row input, .amount-row select, .spread-control input, .offer-fields input, .header-actions select, .script-header select, .table-skew input { font-size: 16px; }
   .offers-header { align-items: stretch; }
   .header-actions { width: 100%; }
   .header-actions select { flex: 1; min-width: 0; }
+  .offer-fields { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .offer-result { padding: 0 16px 14px; }
+  .offer-result strong { font-size: 24px; }
+  .negotiation { position: static; margin-inline: 0; max-height: none; overflow: visible; box-shadow: none; }
+  .script-card blockquote { font-size: 16px; }
+  .script-header select { width: 100%; }
+  .table-skew label { flex: 1 1 120px; }
+  .table-skew input { width: 100%; min-height: 44px; }
+  .app-footer { flex-direction: column; }
+}
+
+@media (max-width: 430px) {
+  .control-panel { padding-inline: 14px; }
+  .workspace { padding-inline: 10px; }
   .offer-card { border-radius: 3px; }
+  .offer-body { padding: 13px 12px; }
   .offer-title-row { gap: 8px; }
-  .offer-result { flex-direction: column; align-items: stretch; }
+  .offer-result { padding-inline: 12px; flex-direction: column; align-items: stretch; }
   .offer-result > div:first-child { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
   .offer-result strong { font-size: 23px; }
   .offer-actions { justify-content: flex-end; }
-  .negotiation { padding: 17px 14px; margin-inline: -4px; }
+  .negotiation { padding: 17px 12px; margin-inline: 0; }
   .negotiation-grid { grid-template-columns: 1fr 1fr; }
   .negotiation-grid > div { padding: 10px; }
   .negotiation-grid strong { font-size: 18px; }
   .script-card { padding: 14px; }
+  .script-card blockquote { overflow-wrap: anywhere; }
 }
 
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; } }
@@ -303,6 +312,7 @@ html { scroll-behavior: smooth; }
   .site-header-inner { width: min(100% - 28px, 1020px); min-height: 64px; }
   .site-nav { display: none; }
   .mobile-menu { display: block; }
+  .mobile-menu nav { width: min(280px, calc(100vw - 28px)); max-height: calc(100vh - 84px); overflow-y: auto; overscroll-behavior: contain; }
   .landing-main { width: min(100% - 28px, 1020px); }
   .landing-hero { padding: 52px 0 40px; }
   .landing-hero > p:not(.landing-kicker) { font-size: 17px; }
@@ -327,8 +337,18 @@ html { scroll-behavior: smooth; }
 }
 
 @media (max-width: 430px) {
+  .site-header-inner, .landing-main, .site-footer > div { width: calc(100% - 24px); }
   .landing-hero h1 { font-size: 40px; }
+  .landing-primary { width: 100%; justify-content: space-between; }
+  .landing-stats article { padding: 24px 20px; }
+  .landing-section { scroll-margin-top: 72px; }
+  .knowledge-grid article { padding-inline: 20px; }
+  .conversation-section { padding: 28px 20px; }
   .conversation-section { grid-template-columns: 1fr; }
   .conversation-heading, .conversation-section > a { grid-column: 1; }
+  .article-item summary { gap: 10px; }
+  .article-item > div { padding-left: 40px; padding-right: 12px; }
+  .faq-list summary { padding-inline: 16px; }
+  .faq-list details p { padding-right: 44px; padding-left: 16px; }
   .landing-final-cta a { width: 100%; justify-content: space-between; }
 }
