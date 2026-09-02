@@ -50,6 +50,8 @@ input[type="number"]::-webkit-inner-spin-button { appearance: none; }
 .subtle-button { min-height: 32px; padding: 8px 11px; border: 0; border-radius: 3px; background: #eef0f2; font-size: 11px; font-weight: 500; }
 .subtle-button:hover { background: #e4e7ea; }
 .pair-label { margin: 0; color: #686e76; font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 500; }
+.rate-source { margin: 2px 0 0; padding: 9px 10px; border-left: 2px solid #9aa8bd; background: #f1f4f8; color: #68707a; font-size: 11px; line-height: 1.5; }
+.rate-source strong { color: #48566a; font-weight: 600; }
 
 .market-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; border: 1px solid var(--line); background: var(--line); }
 .market-grid > div { padding: 9px 11px; background: #fdfdfe; }

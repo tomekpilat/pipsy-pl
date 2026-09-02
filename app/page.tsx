@@ -181,6 +181,7 @@ export default function Home() {
             <button className="subtle-button" type="button" onClick={() => setMidTimestamp(Date.now())}>odświeżyłem</button>
           </div>
           <p className="pair-label">{currency}/PLN</p>
+          <p className="rate-source"><strong>Źródło: wpis ręczny.</strong> Kalkulator nie pobiera kursu online; wartość startowa 3,7375 jest tylko przykładem, nie kursem live.</p>
         </section>
 
         <section className="market-grid" aria-label="Parametry rynku">
