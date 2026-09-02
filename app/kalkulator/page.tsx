@@ -340,6 +340,10 @@ export default function Home() {
               const variantRate = result.valid ? result.rate + (model.buy ? -1 : 1) * variantPips / 10_000 : Number.NaN;
               return { pips: variantPips, rate: variantRate, quote: offerQuoteAtRate(result.offer, variantRate) };
             });
+            const presetScenario = scenario.mode === "pips" && variantQuotes.some((variant) => variant.pips === scenarioValue);
+            const customVariant = !presetScenario && result.valid && Number.isFinite(negotiatedRate) && Math.abs(negotiatedRate - result.rate) > 0.0000001
+              ? { pips: negotiatedPips, rate: negotiatedRate, quote: negotiatedQuote }
+              : null;
             let warning = "";
             if (result.valid && model.buy && result.rate < model.ask) warning = "Kurs poniżej rynkowego — sprawdź, czy to na pewno kurs sprzedaży waluty przez tę instytucję.";
             else if (result.valid && !model.buy && result.rate > model.bid) warning = "Kurs powyżej rynkowego — sprawdź, czy to kurs, po którym instytucja kupuje walutę od ciebie.";
@@ -352,6 +356,10 @@ export default function Home() {
                   <span className={`rank-badge ${isLeader && result.valid ? "leader" : ""}`}>{!result.valid ? "uzupełnij" : rank < 0 ? "nieprzeliczona" : isLeader ? (model.buy ? "najtaniej" : "najwięcej") : `${rank + 1}. miejsce`}</span>
                   <label className="sr-only" htmlFor={`name-${result.offer.id}`}>Nazwa oferty</label>
                   <input id={`name-${result.offer.id}`} className="offer-name" value={result.offer.name} onChange={(event) => updateOffer(result.offer.id, "name", event.target.value)} placeholder="nazwa oferty" />
+                  <div className="offer-actions">
+                    <button type="button" onClick={() => savePreset(result.offer)}>{savedId === result.offer.id ? "zapisane" : "zapisz"}</button>
+                    <button type="button" disabled={offers.length <= 1} onClick={() => { setOffers((current) => current.filter((offer) => offer.id !== result.offer.id)); setRankingDirty(true); }}>usuń</button>
+                  </div>
                 </div>
                 <div className="offer-fields">
                   <label><span>kurs</span><input inputMode="decimal" value={result.offer.rate} onChange={(event) => updateOffer(result.offer.id, "rate", event.target.value)} /></label>
@@ -361,7 +369,7 @@ export default function Home() {
                 </div>
                 <div className="offer-scenario">
                   <div className="scenario-heading">
-                    <div><span>Szybkie liczenie w trakcie negocjacji</span><small>Sprawdź dowolny kurs lub zmianę w pipsach. Oferta zmieni się dopiero po użyciu przycisku poniżej.</small></div>
+                    <div><span>Szybkie liczenie w trakcie negocjacji</span><small>Zmień kurs albo pipsy — wynik zobaczysz w wyróżnionym rzędzie.</small></div>
                   </div>
                   <div className="scenario-controls">
                     <label><span>kurs do sprawdzenia</span><input inputMode="decimal" value={rateInputValue} onChange={(event) => updateScenario(result.offer.id, "rate", event.target.value)} disabled={!result.valid} /></label>
@@ -372,32 +380,42 @@ export default function Home() {
                       <button type="button" aria-label="Dodaj 1 pips" disabled={!result.valid} onClick={() => nudgeScenarioPips(result.offer.id, pipsInputValue, 1)}>+</button>
                     </div><small className="scenario-direction-note">{model.buy ? "odejmowane od kursu oferty" : "dodawane do kursu oferty"}</small></div>
                   </div>
-                  <div className="scenario-variants" aria-label={`Szybkie warianty dla ${result.offer.name || "oferty"}`}>
-                    {variantQuotes.map((variant) => <button className={scenario.mode === "pips" && numberFrom(scenario.value) === variant.pips ? "active" : ""} type="button" key={variant.pips} disabled={!result.valid} onClick={() => updateScenario(result.offer.id, "pips", `${variant.pips}`)}>
-                      <span>{model.buy ? "−" : "+"}{variant.pips} pips</span><strong>{money(variant.quote.total, 0)}</strong><small>{pips(variant.quote.effectivePips)} efektywnie</small>
-                    </button>)}
+                  <div className="quote-table" aria-label={`Kursy i kwoty dla ${result.offer.name || "oferty"}`}>
+                    <div className="quote-table-head" aria-hidden="true"><span>kurs</span><span>zmiana</span><span>pipsy efektywnie</span><span>ostateczna kwota</span></div>
+                    <div className="quote-row quote-row-current">
+                      <div data-label="kurs"><small>obecna oferta</small><strong>{result.valid ? rate4(result.rate) : "—"}</strong></div>
+                      <div data-label="zmiana"><strong>0 pips</strong></div>
+                      <div data-label="pipsy efektywnie"><span className={`quote-grade grade-${grade?.tone ?? "neutral"}`}>{result.valid ? `${Math.round(result.effectivePips)} pips · ${grade?.label}` : "— · brak oceny"}</span></div>
+                      <div className="quote-amount" data-label="ostateczna kwota"><strong>{result.valid ? money(result.total) : "—"}</strong><small>{!result.valid ? "wpisz kurs" : isLeader ? (model.buy ? "najniższy koszt" : "najwyższy przychód") : Number.isFinite(delta) ? `${model.buy ? "+" : "−"}${money(delta, 0)} względem lidera` : "przelicz ranking"}</small></div>
+                    </div>
+                    {variantQuotes.map((variant) => {
+                      const active = scenario.mode === "pips" && scenarioValue === variant.pips;
+                      const difference = result.valid && Number.isFinite(variant.quote.total)
+                        ? Math.abs(variant.quote.total - result.total)
+                        : Number.NaN;
+                      return <div className={`quote-row quote-row-calculated ${active ? "active" : ""}`} key={variant.pips}>
+                        <div data-label="kurs"><small>wyliczenie</small><strong>{rate4(variant.rate)}</strong></div>
+                        <div data-label="zmiana"><button className="quote-variant-button" type="button" disabled={!result.valid} onClick={() => updateScenario(result.offer.id, "pips", `${variant.pips}`)}>{model.buy ? "−" : "+"}{variant.pips} pips</button></div>
+                        <div data-label="pipsy efektywnie"><strong>{pips(variant.quote.effectivePips)}</strong></div>
+                        <div className="quote-amount" data-label="ostateczna kwota"><strong>{money(variant.quote.total)}</strong><small>{money(difference, 0)} lepiej od oferty</small></div>
+                      </div>;
+                    })}
+                    {customVariant && <div className="quote-row quote-row-calculated active">
+                      <div data-label="kurs"><small>własny wariant</small><strong>{rate4(customVariant.rate)}</strong></div>
+                      <div data-label="zmiana"><strong>{customVariant.rate >= result.rate ? "+" : "−"}{pips(Math.abs((customVariant.rate - result.rate) * 10_000))}</strong></div>
+                      <div data-label="pipsy efektywnie"><strong>{pips(customVariant.quote.effectivePips)}</strong></div>
+                      <div className="quote-amount" data-label="ostateczna kwota"><strong>{money(customVariant.quote.total)}</strong><small>{money(Math.abs(negotiatedDifference), 0)} {negotiatedDifference >= 0 ? "lepiej" : "gorzej"} od oferty</small></div>
+                    </div>}
                   </div>
-                  <div className="scenario-summary">
-                    <div><span>sprawdzana kwota</span><strong>{money(negotiatedQuote.total)}</strong><small>{pips(negotiatedQuote.effectivePips)} efektywnie</small></div>
-                    <div><span>zmiana</span><strong>{money(negotiatedDifference)}</strong><small>{pips(negotiatedPips)} lepiej</small></div>
-                    <button type="button" disabled={!result.valid || !Number.isFinite(negotiatedRate) || negotiatedRate <= 0 || Math.abs(negotiatedRate - result.rate) < 0.0000001} onClick={() => {
+                  <button className="apply-quote-button" type="button" disabled={!result.valid || !Number.isFinite(negotiatedRate) || negotiatedRate <= 0 || Math.abs(negotiatedRate - result.rate) < 0.0000001} onClick={() => {
                       updateOffer(result.offer.id, "rate", rate4(negotiatedRate));
                       updateScenario(result.offer.id, "pips", "0");
-                    }}>zapisz jako kurs oferty</button>
-                  </div>
+                    }}>zapisz wyróżniony kurs jako ofertę</button>
                 </div>
                 <div className="offer-meta">
-                  <span className={`grade grade-${grade?.tone ?? "neutral"}`}><i />{result.valid ? `${Math.round(result.effectivePips)} pips · ${grade?.label}` : "— · brak oceny"}</span>
                   {result.valid && <span>kurs efektywny {rate4(result.effectiveRate)} · prowizje i opłaty {money(result.commission + (numberFrom(result.offer.transferFee) || 0), 0)} = {Math.round(result.fixedFeePips)} pips stałych</span>}
                 </div>
                 {warning && <p className="offer-warning">{warning}</p>}
-              </div>
-              <div className="offer-result">
-                <div><strong>{result.valid ? money(result.total) : "—"}</strong><span>{!result.valid ? "wpisz kurs" : isLeader ? (model.buy ? "najniższy koszt" : "najwyższy przychód") : Number.isFinite(delta) ? `${model.buy ? "+" : "−"}${money(delta, 0)}` : "przelicz ranking"}</span></div>
-                <div className="offer-actions">
-                  <button type="button" onClick={() => savePreset(result.offer)}>{savedId === result.offer.id ? "zapisane" : "zapisz"}</button>
-                  <button type="button" disabled={offers.length <= 1} onClick={() => { setOffers((current) => current.filter((offer) => offer.id !== result.offer.id)); setRankingDirty(true); }}>usuń</button>
-                </div>
               </div>
             </article>;
           })}
