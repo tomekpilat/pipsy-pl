@@ -39,6 +39,11 @@ test("server-renders the pipsy calculator at its own route", async () => {
   assert.match(html, /Porównanie ofert/);
   assert.match(html, /Negocjacja/);
   assert.match(html, /375[\s\u00a0]170,00 zł/);
+  assert.match(html, /przelicz ranking/);
+  assert.match(html, /Ranking aktualny/);
+  assert.match(html, /40 pips(?:<!-- -->)? efektywnie/);
+  assert.match(html, /374[\s\u00a0]150 zł(?:<!-- -->)? łącznie/);
+  assert.match(html, /łącznie/);
   assert.match(html, /https:\/\/pipsy\.pl\/og-v2\.jpg/);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape|react-loading-skeleton/i);
 });

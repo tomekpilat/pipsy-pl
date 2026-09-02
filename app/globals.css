@@ -58,9 +58,11 @@ input[type="number"]::-webkit-inner-spin-button { appearance: none; }
 .market-grid > div { padding: 9px 11px; background: #fdfdfe; }
 .market-grid span { display: block; color: #7b8087; font-size: 10px; line-height: 1.5; }
 .market-grid strong { display: block; font-family: "IBM Plex Mono", monospace; font-size: 14px; font-weight: 500; line-height: 1.4; font-variant-numeric: tabular-nums; }
+.market-grid small { display: block; margin-top: 2px; color: #858b92; font-family: "IBM Plex Mono", monospace; font-size: 9px; line-height: 1.4; }
 .market-grid .pip-tile { grid-column: span 2; background: var(--blue-light); }
 .market-grid .pip-tile span { color: #5f6f88; }
 .market-grid .pip-tile strong { color: #45566f; font-size: 16px; font-weight: 600; }
+.market-grid .pip-tile small { color: #63738b; }
 
 .direction-switch { display: flex; overflow: hidden; border: 1px solid var(--line); border-radius: 3px; }
 .direction-switch button { flex: 1; min-height: 44px; padding: 12px 8px; border: 0; background: transparent; color: #777d84; font-size: 14px; font-weight: 500; }
@@ -86,6 +88,11 @@ input[type="number"]::-webkit-inner-spin-button { appearance: none; }
 .header-actions select, .script-header select { min-height: 40px; padding: 10px; border: 1px solid #cfd4da; border-radius: 3px; outline: none; background: #fcfcfd; font-size: 12px; }
 .primary-button { min-height: 40px; padding: 12px 15px; border: 0; border-radius: 3px; background: var(--navy); color: #f8f9fa; font-size: 12px; font-weight: 500; }
 .primary-button:hover { background: var(--navy-dark); }
+.rank-button { min-height: 40px; padding: 10px 13px; border: 1px solid #aeb5bf; border-radius: 3px; background: #f8f9fa; color: #4d5560; font-size: 12px; font-weight: 600; }
+.rank-button:hover { border-color: #7f8996; background: #fff; }
+.rank-button.pending { border-color: #cfad42; background: #fff5cf; color: #665016; }
+.ranking-status { margin: -8px 0 0; color: #737981; font-size: 11px; line-height: 1.5; }
+.ranking-status.pending { color: #8a6716; }
 .empty-note, .hint-line { margin: 0; color: #71777e; font-size: 12px; line-height: 1.55; }
 .offer-list { display: flex; flex-direction: column; gap: 10px; }
 .offer-list.muted { opacity: .48; pointer-events: none; }
@@ -120,11 +127,14 @@ input[type="number"]::-webkit-inner-spin-button { appearance: none; }
 .offer-actions button:hover { background: #eef0f2; }
 
 .negotiation { padding: 20px 22px; border-radius: 4px; background: var(--navy); display: flex; flex-direction: column; gap: 16px; }
+.negotiation-context { margin: -6px 0 0; color: #c3cbd7; font-size: 11px; line-height: 1.5; }
+.negotiation-context strong { color: #f3f5f7; font-weight: 600; }
 .negotiation-grid { display: grid; grid-template-columns: repeat(4,minmax(130px,1fr)); gap: 1px; background: #4d5666; }
 .negotiation-grid > div { padding: 12px 14px; background: #404857; }
 .negotiation-grid span { display: block; color: #aeb9ca; font-size: 10px; line-height: 1.5; letter-spacing: .08em; text-transform: uppercase; }
 .negotiation-grid strong { display: block; color: #f5f6f8; font-family: "IBM Plex Mono", monospace; font-size: 22px; font-weight: 500; line-height: 1.35; white-space: nowrap; }
 .negotiation-grid small { display: block; color: #aab4c4; font-size: 11px; line-height: 1.4; }
+.negotiation-grid .negotiation-note { margin-top: 3px; color: #8f9bac; font-size: 9px; }
 .negotiation-grid .opening { background: var(--yellow); }
 .negotiation-grid .opening span, .negotiation-grid .opening small { color: #65501a; }
 .negotiation-grid .opening strong { color: #3f3212; font-weight: 600; }
@@ -160,7 +170,7 @@ input[type="number"]::-webkit-inner-spin-button { appearance: none; }
   .control-panel { position: relative; width: 100%; height: auto; min-height: 0; overflow: visible; padding: 18px 16px; gap: 16px; border-right: 0; border-bottom: 1px solid var(--line); }
   .workspace { padding: 18px 12px 36px; gap: 16px; }
   .brand { margin-bottom: 2px; }
-  .subtle-button, .header-actions select, .primary-button, .offer-actions button, .app-footer button { min-height: 44px; }
+  .subtle-button, .header-actions select, .primary-button, .rank-button, .offer-actions button, .app-footer button { min-height: 44px; }
   .amount-row input, .amount-row select, .spread-control input, .offer-fields input, .header-actions select, .script-header select, .table-skew input { font-size: 16px; }
   .offers-header { align-items: stretch; }
   .header-actions { width: 100%; }
@@ -186,6 +196,7 @@ input[type="number"]::-webkit-inner-spin-button { appearance: none; }
   .offer-result > div:first-child { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
   .offer-result strong { font-size: 23px; }
   .offer-actions { justify-content: flex-end; }
+  .rank-button { width: 100%; }
   .negotiation { padding: 17px 12px; margin-inline: 0; }
   .negotiation-grid { grid-template-columns: 1fr 1fr; }
   .negotiation-grid > div { padding: 10px; }

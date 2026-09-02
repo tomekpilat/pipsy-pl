@@ -57,6 +57,8 @@ export default function Home() {
   const [tableSell, setTableSell] = useState("");
   const [copyState, setCopyState] = useState<"idle" | "copied">("idle");
   const [savedId, setSavedId] = useState("");
+  const [rankingIds, setRankingIds] = useState(() => INITIAL_OFFERS.map((offer) => offer.id));
+  const [rankingDirty, setRankingDirty] = useState(false);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 20_000);
@@ -102,25 +104,60 @@ export default function Home() {
     });
 
     const ranked = calculated.filter((result) => result.valid).sort((a, b) => buy ? a.total - b.total : b.total - a.total);
-    const leader = ranked[0];
-    const ordered = [...ranked, ...calculated.filter((result) => !result.valid)];
     const negotiable = hasMid && hasAmount && notional >= 100_000;
     const floor = buy ? ask : bid;
     const opening = buy ? ask + 0.004 : bid - 0.004;
     const target = buy ? ask + 0.008 : bid - 0.008;
     const targetHigh = buy ? ask + 0.011 : bid - 0.011;
-    const potentialSaving = leader ? Math.max(0, (buy ? leader.effectiveRate - target : target - leader.effectiveRate) * amount) : Number.NaN;
     const ageMinutes = Math.max(0, Math.floor((now - midTimestamp) / 60_000));
     const ageLevel = ageMinutes >= 30 ? "critical" : ageMinutes >= 15 ? "warning" : "fresh";
 
-    return { mid, amount, halfSpread, hasMid, hasAmount, buy, ask, bid, pipValue, notional, calculated, ranked, leader, ordered, negotiable, floor, opening, target, targetHigh, potentialSaving, ageMinutes, ageLevel };
+    return { mid, amount, halfSpread, hasMid, hasAmount, buy, ask, bid, pipValue, notional, calculated, ranked, negotiable, floor, opening, target, targetHigh, ageMinutes, ageLevel };
   }, [midInput, amountInput, halfSpreadInput, direction, offers, now, midTimestamp]);
+
+  const displayedResults = useMemo(() => {
+    const positions = new Map(rankingIds.map((id, index) => [id, index]));
+    return [...model.calculated].sort((a, b) => {
+      const aPosition = positions.get(a.offer.id) ?? Number.MAX_SAFE_INTEGER;
+      const bPosition = positions.get(b.offer.id) ?? Number.MAX_SAFE_INTEGER;
+      return aPosition - bPosition;
+    });
+  }, [model.calculated, rankingIds]);
+
+  const displayedValid = displayedResults.filter((result) => result.valid);
+  const displayedLeader = displayedResults.find((result) => result.offer.id === rankingIds[0]);
+  const pipsFromMid = (rate: number) => Number.isFinite(rate) && model.hasMid
+    ? (model.buy ? rate - model.mid : model.mid - rate) * 10_000
+    : Number.NaN;
+  const pips = (value: number) => Number.isFinite(value) ? `${Math.round(value)} pips` : "— pips";
 
   const selectedForScript = model.calculated.find((result) => result.valid && result.offer.id === scriptTarget)
     ?? [...model.calculated].filter((result) => result.valid).sort((a, b) => b.effectivePips - a.effectivePips)[0];
 
+  const negotiationQuote = (rate: number) => {
+    if (!model.hasMid || !model.hasAmount || !Number.isFinite(rate)) return { total: Number.NaN, effectivePips: Number.NaN };
+    const percentagePoints = selectedForScript ? numberFrom(selectedForScript.offer.commissionPct) : 0;
+    const percentage = (Number.isFinite(percentagePoints) ? percentagePoints : 0) / 100;
+    const fixedFee = selectedForScript ? numberFrom(selectedForScript.offer.fixedFee) : 0;
+    const transferFee = selectedForScript ? numberFrom(selectedForScript.offer.transferFee) : 0;
+    const gross = model.amount * rate;
+    const fees = gross * percentage + (Number.isFinite(fixedFee) ? fixedFee : 0) + (Number.isFinite(transferFee) ? transferFee : 0);
+    const total = model.buy ? gross + fees : gross - fees;
+    const effectiveRate = total / model.amount;
+    const effectivePips = (model.buy ? effectiveRate - model.mid : model.mid - effectiveRate) * 10_000;
+    return { total, effectivePips };
+  };
+
+  const floorQuote = negotiationQuote(model.floor);
+  const openingQuote = negotiationQuote(model.opening);
+  const targetQuote = negotiationQuote(model.target);
+  const targetHighQuote = negotiationQuote(model.targetHigh);
+  const potentialSaving = displayedLeader?.valid && Number.isFinite(targetQuote.total)
+    ? Math.max(0, model.buy ? displayedLeader.total - targetQuote.total : targetQuote.total - displayedLeader.total)
+    : Number.NaN;
+
   const negotiationScript = model.negotiable && selectedForScript
-    ? `${model.buy ? "Mam do kupienia" : "Mam do sprzedania"} ${model.amount.toLocaleString("pl-PL")} ${CURRENCY_WORDS[currency]}, transakcja dziś. Rynek jest na ${spokenRate(model.mid)}, wasz kurs to ${spokenRate(selectedForScript.rate)} — czyli ${Math.round(selectedForScript.effectivePips)} pipsów. Przy tym wolumenie oczekuję ${spokenRate(model.opening)}.`
+    ? `${model.buy ? "Mam do kupienia" : "Mam do sprzedania"} ${model.amount.toLocaleString("pl-PL")} ${CURRENCY_WORDS[currency]}, transakcja dziś. Rynek jest na ${spokenRate(model.mid)}, wasz kurs to ${spokenRate(selectedForScript.rate)} — czyli ${Math.round(selectedForScript.effectivePips)} pipsów. Przy tym wolumenie oczekuję ${spokenRate(model.opening)} — ${Math.round(openingQuote.effectivePips)} pipsów efektywnie, ${money(openingQuote.total, 0)} łącznie.`
     : "Wpisz kurs, kwotę i przynajmniej jedną ofertę — wtedy przygotuję zdanie do rozmowy.";
 
   const tableSkew = useMemo(() => {
@@ -135,14 +172,26 @@ export default function Home() {
 
   const updateOffer = (id: string, field: keyof Omit<Offer, "id">, value: string) => {
     setOffers((current) => current.map((offer) => offer.id === id ? { ...offer, [field]: value } : offer));
+    if (field !== "name") setRankingDirty(true);
     setSavedId("");
     setCopyState("idle");
   };
 
-  const addOffer = (preset?: Preset) => setOffers((current) => [...current, {
-    id: `o${Date.now()}`, name: preset?.name ?? "", rate: "", commissionPct: preset?.commissionPct ?? "",
-    fixedFee: preset?.fixedFee ?? "", transferFee: preset?.transferFee ?? "",
-  }]);
+  const addOffer = (preset?: Preset) => {
+    setOffers((current) => [...current, {
+      id: `o${Date.now()}`, name: preset?.name ?? "", rate: "", commissionPct: preset?.commissionPct ?? "",
+      fixedFee: preset?.fixedFee ?? "", transferFee: preset?.transferFee ?? "",
+    }]);
+    setRankingDirty(true);
+  };
+
+  const commitRanking = () => {
+    setRankingIds([
+      ...model.ranked.map((result) => result.offer.id),
+      ...model.calculated.filter((result) => !result.valid).map((result) => result.offer.id),
+    ]);
+    setRankingDirty(false);
+  };
 
   const savePreset = (offer: Offer) => {
     const next = [...presets, { id: `p${Date.now()}`, name: offer.name || "bez nazwy", commissionPct: offer.commissionPct, fixedFee: offer.fixedFee, transferFee: offer.transferFee }];
@@ -161,7 +210,7 @@ export default function Home() {
   };
 
   const validCount = model.ranked.length;
-  const nearTie = validCount >= 2 && Math.abs(model.ranked[0].total - model.ranked[1].total) < 20;
+  const nearTie = displayedValid.length >= 2 && Math.abs(displayedValid[0].total - displayedValid[1].total) < 20;
 
   return (
     <div className="app-shell">
@@ -185,20 +234,20 @@ export default function Home() {
         </section>
 
         <section className="market-grid" aria-label="Parametry rynku">
-          <div><span>ask</span><strong>{rate4(model.ask)}</strong></div>
-          <div><span>bid</span><strong>{rate4(model.bid)}</strong></div>
-          <div className="pip-tile"><span>1 pips</span><strong>{money(model.pipValue)}</strong></div>
+          <div><span>ask</span><strong>{rate4(model.ask)}</strong><small>{pips(pipsFromMid(model.ask))} od mid</small></div>
+          <div><span>bid</span><strong>{rate4(model.bid)}</strong><small>{pips(pipsFromMid(model.bid))} od mid</small></div>
+          <div className="pip-tile"><span>1 pips</span><strong>{money(model.pipValue)}</strong><small>przy tej kwocie</small></div>
         </section>
 
         <section className="control-section">
           <p className="eyebrow">Transakcja</p>
           <div className="direction-switch" role="group" aria-label="Kierunek transakcji">
-            <button type="button" className={model.buy ? "active" : ""} aria-pressed={model.buy} onClick={() => { setDirection("buy"); setCopyState("idle"); }}>kupuję</button>
-            <button type="button" className={!model.buy ? "active" : ""} aria-pressed={!model.buy} onClick={() => { setDirection("sell"); setCopyState("idle"); }}>sprzedaję</button>
+            <button type="button" className={model.buy ? "active" : ""} aria-pressed={model.buy} onClick={() => { setDirection("buy"); setRankingDirty(true); setCopyState("idle"); }}>kupuję</button>
+            <button type="button" className={!model.buy ? "active" : ""} aria-pressed={!model.buy} onClick={() => { setDirection("sell"); setRankingDirty(true); setCopyState("idle"); }}>sprzedaję</button>
           </div>
           <div className="amount-row">
             <label className="sr-only" htmlFor="amount">Kwota transakcji</label>
-            <input id="amount" inputMode="decimal" value={amountInput} onChange={(event) => { setAmountInput(event.target.value); setCopyState("idle"); }} />
+            <input id="amount" inputMode="decimal" value={amountInput} onChange={(event) => { setAmountInput(event.target.value); setRankingDirty(true); setCopyState("idle"); }} />
             <label className="sr-only" htmlFor="currency">Waluta</label>
             <select id="currency" value={currency} onChange={(event) => setCurrency(event.target.value as Currency)}>
               <option>USD</option><option>EUR</option><option>GBP</option><option>CHF</option>
@@ -228,17 +277,22 @@ export default function Home() {
               {presets.map((preset) => <option key={preset.id} value={preset.id}>{preset.name}</option>)}
             </select>
             <button className="primary-button" type="button" onClick={() => addOffer()}>+ oferta</button>
+            <button className={`rank-button ${rankingDirty ? "pending" : ""}`} type="button" onClick={commitRanking}>przelicz ranking</button>
           </div>
         </header>
+
+        <p className={`ranking-status ${rankingDirty ? "pending" : ""}`} role="status">
+          {rankingDirty ? "Dane zmienione — kolejność i zwycięzca pozostają bez zmian do przeliczenia rankingu." : "Ranking aktualny — pipsy i kwoty policzone dla bieżących danych."}
+        </p>
 
         {!model.hasMid && <p className="empty-note">Wpisz kurs rynkowy w lewej kolumnie — bez niego nie ma do czego porównywać.</p>}
 
         <section className={`offer-list ${!model.hasMid ? "muted" : ""}`} aria-label="Porównanie ofert">
-          {model.ordered.map((result) => {
-            const rank = model.ranked.indexOf(result);
+          {displayedResults.map((result) => {
+            const rank = rankingIds.indexOf(result.offer.id);
             const isLeader = rank === 0;
             const grade = result.valid ? GRADE_STOPS.find((item) => result.effectivePips < item.max)! : null;
-            const delta = result.valid && model.leader ? Math.abs(result.total - model.leader.total) : Number.NaN;
+            const delta = result.valid && displayedLeader?.valid ? Math.abs(result.total - displayedLeader.total) : Number.NaN;
             let warning = "";
             if (result.valid && model.buy && result.rate < model.ask) warning = "Kurs poniżej rynkowego — sprawdź, czy to na pewno kurs sprzedaży waluty przez tę instytucję.";
             else if (result.valid && !model.buy && result.rate > model.bid) warning = "Kurs powyżej rynkowego — sprawdź, czy to kurs, po którym instytucja kupuje walutę od ciebie.";
@@ -248,7 +302,7 @@ export default function Home() {
             return <article className={`offer-card ${isLeader ? "leader" : ""}`} key={result.offer.id}>
               <div className="offer-body">
                 <div className="offer-title-row">
-                  <span className={`rank-badge ${isLeader ? "leader" : ""}`}>{!result.valid ? "uzupełnij" : isLeader ? (model.buy ? "najtaniej" : "najwięcej") : `${rank + 1}. miejsce`}</span>
+                  <span className={`rank-badge ${isLeader && result.valid ? "leader" : ""}`}>{!result.valid ? "uzupełnij" : rank < 0 ? "nieprzeliczona" : isLeader ? (model.buy ? "najtaniej" : "najwięcej") : `${rank + 1}. miejsce`}</span>
                   <label className="sr-only" htmlFor={`name-${result.offer.id}`}>Nazwa oferty</label>
                   <input id={`name-${result.offer.id}`} className="offer-name" value={result.offer.name} onChange={(event) => updateOffer(result.offer.id, "name", event.target.value)} placeholder="nazwa oferty" />
                 </div>
@@ -265,10 +319,10 @@ export default function Home() {
                 {warning && <p className="offer-warning">{warning}</p>}
               </div>
               <div className="offer-result">
-                <div><strong>{result.valid ? money(result.total) : "—"}</strong><span>{!result.valid ? "wpisz kurs" : isLeader ? (model.buy ? "najniższy koszt" : "najwyższy przychód") : `${model.buy ? "+" : "−"}${money(delta, 0)}`}</span></div>
+                <div><strong>{result.valid ? money(result.total) : "—"}</strong><span>{!result.valid ? "wpisz kurs" : isLeader ? (model.buy ? "najniższy koszt" : "najwyższy przychód") : Number.isFinite(delta) ? `${model.buy ? "+" : "−"}${money(delta, 0)}` : "przelicz ranking"}</span></div>
                 <div className="offer-actions">
                   <button type="button" onClick={() => savePreset(result.offer)}>{savedId === result.offer.id ? "zapisane" : "zapisz"}</button>
-                  <button type="button" disabled={offers.length <= 1} onClick={() => setOffers((current) => current.filter((offer) => offer.id !== result.offer.id))}>usuń</button>
+                  <button type="button" disabled={offers.length <= 1} onClick={() => { setOffers((current) => current.filter((offer) => offer.id !== result.offer.id)); setRankingDirty(true); }}>usuń</button>
                 </div>
               </div>
             </article>;
@@ -281,11 +335,12 @@ export default function Home() {
         <section className="negotiation">
           <p className="eyebrow light">Negocjacja</p>
           {model.negotiable ? <>
+            {selectedForScript && <p className="negotiation-context">Pipsy efektywne i kwoty łączne dla: <strong>{selectedForScript.offer.name || "oferta bez nazwy"}</strong> — z prowizjami i opłatami.</p>}
             <div className="negotiation-grid">
-              <div><span>podłoga</span><strong>{rate4(model.floor)}</strong><small>niżej dealer nie zejdzie</small></div>
-              <div className="opening"><span>otwórz od</span><strong>{rate4(model.opening)}</strong><small>mów na głos</small></div>
-              <div><span>realny cel</span><strong>{rate4(model.target)}</strong><small>zakres {rate4(model.target)}–{rate4(model.targetHigh)}</small></div>
-              <div><span>do zyskania</span><strong>{money(model.potentialSaving, 0)}</strong><small>wobec lidera</small></div>
+              <div><span>podłoga</span><strong>{rate4(model.floor)}</strong><small>{pips(floorQuote.effectivePips)} efektywnie · {money(floorQuote.total, 0)} łącznie</small><small className="negotiation-note">niżej dealer nie zejdzie</small></div>
+              <div className="opening"><span>otwórz od</span><strong>{rate4(model.opening)}</strong><small>{pips(openingQuote.effectivePips)} efektywnie · {money(openingQuote.total, 0)} łącznie</small><small className="negotiation-note">mów na głos</small></div>
+              <div><span>realny cel</span><strong>{rate4(model.target)}</strong><small>{pips(targetQuote.effectivePips)} efektywnie · {money(targetQuote.total, 0)} łącznie</small><small className="negotiation-note">zakres {rate4(model.target)}–{rate4(model.targetHigh)} · {pips(targetQuote.effectivePips)}–{pips(targetHighQuote.effectivePips)}</small></div>
+              <div><span>do zyskania</span><strong>{money(potentialSaving, 0)}</strong><small>{pips(potentialSaving / model.pipValue)} wobec lidera</small></div>
             </div>
 
             <div className="script-card">
