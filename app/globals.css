@@ -40,7 +40,7 @@ input[type="number"]::-webkit-inner-spin-button { appearance: none; }
 .eyebrow { margin: 0; color: #777d85; font-size: 10px; font-weight: 600; line-height: 1; letter-spacing: .14em; text-transform: uppercase; }
 .eyebrow.light { color: #afbcd2; }
 .mid-input { width: 100%; padding: 8px 10px 10px; border: 1px solid var(--line); border-radius: 3px; outline: none; background: #f8f9fa; font-family: "IBM Plex Mono", monospace; font-size: 32px; font-weight: 500; line-height: 1; letter-spacing: -.035em; font-variant-numeric: tabular-nums; }
-.mid-input:focus, .amount-row input:focus, .amount-row select:focus, .spread-control input:focus, .offer-fields input:focus, .header-actions select:focus, .script-header select:focus { border-color: #71819b; box-shadow: 0 0 0 3px rgba(84,103,130,.1); outline: none; }
+.mid-input:focus, .amount-row input:focus, .amount-row select:focus, .spread-control input:focus, .offer-fields input:focus, .offer-scenario input:focus, .header-actions select:focus, .script-header select:focus { border-color: #71819b; box-shadow: 0 0 0 3px rgba(84,103,130,.1); outline: none; }
 .mid-input.age-warning { border-color: #c89537; }
 .mid-input.age-critical { border-color: #b95646; }
 .rate-status-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -108,6 +108,30 @@ input[type="number"]::-webkit-inner-spin-button { appearance: none; }
 .offer-fields label, .table-skew label { display: flex; flex-direction: column; gap: 4px; }
 .offer-fields label span, .table-skew label span { color: #7c8188; font-size: 10px; line-height: 1; letter-spacing: .06em; text-transform: uppercase; }
 .offer-fields input { width: 100%; padding: 9px 8px; border: 1px solid #dde1e4; border-radius: 3px; outline: none; background: rgba(255,255,255,.7); font-family: "IBM Plex Mono", monospace; font-size: 15px; }
+.offer-scenario { padding-top: 12px; border-top: 1px solid #e3e6e9; display: flex; flex-direction: column; gap: 10px; }
+.scenario-heading > div { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.scenario-heading span { color: #515861; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.scenario-heading small { max-width: 430px; color: #7a8087; font-size: 10px; line-height: 1.45; }
+.scenario-controls { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+.scenario-controls label { display: flex; flex-direction: column; gap: 4px; }
+.scenario-controls label > span { color: #7c8188; font-size: 10px; line-height: 1; letter-spacing: .06em; text-transform: uppercase; }
+.scenario-controls input { width: 100%; min-height: 40px; padding: 9px 8px; border: 1px solid #d9dde2; border-radius: 3px; outline: none; background: #fff; font-family: "IBM Plex Mono", monospace; font-size: 14px; }
+.scenario-pips-input { position: relative; }
+.scenario-pips-input input { padding-right: 66px; }
+.scenario-pips-input em { position: absolute; top: 50%; right: 9px; color: #727983; font-size: 10px; font-style: normal; transform: translateY(-50%); }
+.scenario-variants { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 6px; }
+.scenario-variants button { min-width: 0; padding: 9px 8px; border: 1px solid #dde1e4; border-radius: 3px; background: #f8f9fa; text-align: left; }
+.scenario-variants button:hover { border-color: #aeb7c2; background: #fff; }
+.scenario-variants button.active { border-color: #c9aa45; background: #fff8dc; box-shadow: inset 0 0 0 1px #dfc66c; }
+.scenario-variants span, .scenario-variants small { display: block; color: #757c85; font-size: 9px; line-height: 1.4; }
+.scenario-variants span { font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.scenario-variants strong { display: block; margin: 2px 0; overflow: hidden; color: #424850; font-family: "IBM Plex Mono", monospace; font-size: 13px; font-weight: 600; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
+.scenario-summary { padding: 10px; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)) auto; gap: 10px; align-items: center; border-radius: 3px; background: #eef1f5; }
+.scenario-summary > div > span, .scenario-summary small { display: block; color: #707780; font-size: 9px; line-height: 1.4; }
+.scenario-summary > div > span { font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.scenario-summary strong { display: block; margin-top: 2px; font-family: "IBM Plex Mono", monospace; font-size: 17px; font-weight: 600; line-height: 1.3; white-space: nowrap; }
+.scenario-summary button { min-height: 40px; padding: 10px 12px; border: 0; border-radius: 3px; background: #4b5668; color: #fff; font-size: 10px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; }
+.scenario-summary button:hover { background: #343b49; }
 .offer-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; color: #757b82; font-size: 11px; line-height: 1.6; }
 .grade { display: inline-flex; align-items: center; gap: 7px; padding: 6px 9px; border-radius: 2px; font-family: "IBM Plex Mono", monospace; font-size: 12px; font-weight: 500; line-height: 1; }
 .grade i { width: 7px; height: 7px; background: currentColor; }
@@ -171,7 +195,7 @@ input[type="number"]::-webkit-inner-spin-button { appearance: none; }
   .workspace { padding: 18px 12px 36px; gap: 16px; }
   .brand { margin-bottom: 2px; }
   .subtle-button, .header-actions select, .primary-button, .rank-button, .offer-actions button, .app-footer button { min-height: 44px; }
-  .amount-row input, .amount-row select, .spread-control input, .offer-fields input, .header-actions select, .script-header select, .table-skew input { font-size: 16px; }
+  .amount-row input, .amount-row select, .spread-control input, .offer-fields input, .offer-scenario input, .header-actions select, .script-header select, .table-skew input { font-size: 16px; }
   .offers-header { align-items: stretch; }
   .header-actions { width: 100%; }
   .header-actions select { flex: 1; min-width: 0; }
@@ -192,6 +216,14 @@ input[type="number"]::-webkit-inner-spin-button { appearance: none; }
   .offer-card { border-radius: 3px; }
   .offer-body { padding: 13px 12px; }
   .offer-title-row { gap: 8px; }
+  .scenario-heading > div { display: block; }
+  .scenario-heading small { margin-top: 4px; display: block; }
+  .scenario-controls { grid-template-columns: 1fr; }
+  .scenario-variants { gap: 4px; }
+  .scenario-variants button { padding: 8px 6px; }
+  .scenario-variants strong { font-size: 11px; }
+  .scenario-summary { grid-template-columns: 1fr 1fr; }
+  .scenario-summary button { grid-column: 1 / -1; min-height: 44px; }
   .offer-result { padding-inline: 12px; flex-direction: column; align-items: stretch; }
   .offer-result > div:first-child { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
   .offer-result strong { font-size: 23px; }

@@ -6,6 +6,7 @@ type Direction = "buy" | "sell";
 type Currency = "USD" | "EUR" | "GBP" | "CHF";
 type Offer = { id: string; name: string; rate: string; commissionPct: string; fixedFee: string; transferFee: string };
 type Preset = Omit<Offer, "rate">;
+type ScenarioDraft = { mode: "pips" | "rate"; value: string };
 
 const GRADE_STOPS = [
   { max: 50, label: "bardzo dobra", tone: "green" },
@@ -59,6 +60,7 @@ export default function Home() {
   const [savedId, setSavedId] = useState("");
   const [rankingIds, setRankingIds] = useState(() => INITIAL_OFFERS.map((offer) => offer.id));
   const [rankingDirty, setRankingDirty] = useState(false);
+  const [scenarioDrafts, setScenarioDrafts] = useState<Record<string, ScenarioDraft>>({});
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 20_000);
@@ -130,6 +132,23 @@ export default function Home() {
     ? (model.buy ? rate - model.mid : model.mid - rate) * 10_000
     : Number.NaN;
   const pips = (value: number) => Number.isFinite(value) ? `${Math.round(value)} pips` : "— pips";
+  const offerQuoteAtRate = (offer: Offer, rate: number) => {
+    if (!model.hasMid || !model.hasAmount || !Number.isFinite(rate) || rate <= 0) return { total: Number.NaN, effectivePips: Number.NaN };
+    const percentagePoints = numberFrom(offer.commissionPct);
+    const percentage = (Number.isFinite(percentagePoints) ? percentagePoints : 0) / 100;
+    const fixedFee = numberFrom(offer.fixedFee);
+    const transferFee = numberFrom(offer.transferFee);
+    const gross = model.amount * rate;
+    const fees = gross * percentage + (Number.isFinite(fixedFee) ? fixedFee : 0) + (Number.isFinite(transferFee) ? transferFee : 0);
+    const total = model.buy ? gross + fees : gross - fees;
+    const effectiveRate = total / model.amount;
+    const effectivePips = (model.buy ? effectiveRate - model.mid : model.mid - effectiveRate) * 10_000;
+    return { total, effectivePips };
+  };
+
+  const updateScenario = (id: string, mode: ScenarioDraft["mode"], value: string) => {
+    setScenarioDrafts((current) => ({ ...current, [id]: { mode, value } }));
+  };
 
   const selectedForScript = model.calculated.find((result) => result.valid && result.offer.id === scriptTarget)
     ?? [...model.calculated].filter((result) => result.valid).sort((a, b) => b.effectivePips - a.effectivePips)[0];
@@ -293,6 +312,28 @@ export default function Home() {
             const isLeader = rank === 0;
             const grade = result.valid ? GRADE_STOPS.find((item) => result.effectivePips < item.max)! : null;
             const delta = result.valid && displayedLeader?.valid ? Math.abs(result.total - displayedLeader.total) : Number.NaN;
+            const scenario = scenarioDrafts[result.offer.id] ?? { mode: "pips", value: "25" };
+            const scenarioValue = numberFrom(scenario.value);
+            const negotiatedRate = scenario.mode === "rate"
+              ? scenarioValue
+              : result.valid && Number.isFinite(scenarioValue)
+                ? result.rate + (model.buy ? -1 : 1) * scenarioValue / 10_000
+                : Number.NaN;
+            const negotiatedPips = scenario.mode === "pips"
+              ? scenarioValue
+              : result.valid && Number.isFinite(negotiatedRate)
+                ? (model.buy ? result.rate - negotiatedRate : negotiatedRate - result.rate) * 10_000
+                : Number.NaN;
+            const negotiatedQuote = offerQuoteAtRate(result.offer, negotiatedRate);
+            const negotiatedDifference = result.valid && Number.isFinite(negotiatedQuote.total)
+              ? (model.buy ? result.total - negotiatedQuote.total : negotiatedQuote.total - result.total)
+              : Number.NaN;
+            const rateInputValue = scenario.mode === "rate" ? scenario.value : rate4(negotiatedRate);
+            const pipsInputValue = scenario.mode === "pips" ? scenario.value : Number.isFinite(negotiatedPips) ? `${Math.round(negotiatedPips * 10) / 10}` : "";
+            const variantQuotes = [10, 25, 50].map((variantPips) => {
+              const variantRate = result.valid ? result.rate + (model.buy ? -1 : 1) * variantPips / 10_000 : Number.NaN;
+              return { pips: variantPips, rate: variantRate, quote: offerQuoteAtRate(result.offer, variantRate) };
+            });
             let warning = "";
             if (result.valid && model.buy && result.rate < model.ask) warning = "Kurs poniżej rynkowego — sprawdź, czy to na pewno kurs sprzedaży waluty przez tę instytucję.";
             else if (result.valid && !model.buy && result.rate > model.bid) warning = "Kurs powyżej rynkowego — sprawdź, czy to kurs, po którym instytucja kupuje walutę od ciebie.";
@@ -311,6 +352,28 @@ export default function Home() {
                   <label><span>prow. %</span><input inputMode="decimal" value={result.offer.commissionPct} onChange={(event) => updateOffer(result.offer.id, "commissionPct", event.target.value)} placeholder="0" /></label>
                   <label><span>prow. zł</span><input inputMode="decimal" value={result.offer.fixedFee} onChange={(event) => updateOffer(result.offer.id, "fixedFee", event.target.value)} placeholder="0" /></label>
                   <label><span>przelew zł</span><input inputMode="decimal" value={result.offer.transferFee} onChange={(event) => updateOffer(result.offer.id, "transferFee", event.target.value)} placeholder="0" /></label>
+                </div>
+                <div className="offer-scenario">
+                  <div className="scenario-heading">
+                    <div><span>Wariant po negocjacji</span><small>Wpisz kurs albo poprawę w pipsach. Pełna kwota uwzględnia prowizje i opłaty.</small></div>
+                  </div>
+                  <div className="scenario-controls">
+                    <label><span>wynegocjowany kurs</span><input inputMode="decimal" value={rateInputValue} onChange={(event) => updateScenario(result.offer.id, "rate", event.target.value)} disabled={!result.valid} /></label>
+                    <label><span>poprawa w pipsach</span><div className="scenario-pips-input"><input inputMode="decimal" value={pipsInputValue} onChange={(event) => updateScenario(result.offer.id, "pips", event.target.value)} disabled={!result.valid} /><em>{model.buy ? "odejmij" : "dodaj"}</em></div></label>
+                  </div>
+                  <div className="scenario-variants" aria-label={`Szybkie warianty dla ${result.offer.name || "oferty"}`}>
+                    {variantQuotes.map((variant) => <button className={scenario.mode === "pips" && numberFrom(scenario.value) === variant.pips ? "active" : ""} type="button" key={variant.pips} disabled={!result.valid} onClick={() => updateScenario(result.offer.id, "pips", `${variant.pips}`)}>
+                      <span>{model.buy ? "−" : "+"}{variant.pips} pips</span><strong>{money(variant.quote.total, 0)}</strong><small>{pips(variant.quote.effectivePips)} efektywnie</small>
+                    </button>)}
+                  </div>
+                  <div className="scenario-summary">
+                    <div><span>po negocjacji</span><strong>{money(negotiatedQuote.total)}</strong><small>{pips(negotiatedQuote.effectivePips)} efektywnie</small></div>
+                    <div><span>zmiana</span><strong>{money(negotiatedDifference)}</strong><small>{pips(negotiatedPips)} lepiej</small></div>
+                    <button type="button" disabled={!result.valid || !Number.isFinite(negotiatedRate) || negotiatedRate <= 0 || Math.abs(negotiatedRate - result.rate) < 0.0000001} onClick={() => {
+                      updateOffer(result.offer.id, "rate", rate4(negotiatedRate));
+                      updateScenario(result.offer.id, "pips", "0");
+                    }}>ustaw jako kurs oferty</button>
+                  </div>
                 </div>
                 <div className="offer-meta">
                   <span className={`grade grade-${grade?.tone ?? "neutral"}`}><i />{result.valid ? `${Math.round(result.effectivePips)} pips · ${grade?.label}` : "— · brak oceny"}</span>
