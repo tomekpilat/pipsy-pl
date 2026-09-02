@@ -150,6 +150,12 @@ export default function Home() {
     setScenarioDrafts((current) => ({ ...current, [id]: { mode, value } }));
   };
 
+  const nudgeScenarioPips = (id: string, currentValue: string, change: number) => {
+    const currentPips = numberFrom(currentValue);
+    const nextPips = Math.max(0, Math.round(((Number.isFinite(currentPips) ? currentPips : 0) + change) * 10) / 10);
+    updateScenario(id, "pips", `${nextPips}`);
+  };
+
   const selectedForScript = model.calculated.find((result) => result.valid && result.offer.id === scriptTarget)
     ?? [...model.calculated].filter((result) => result.valid).sort((a, b) => b.effectivePips - a.effectivePips)[0];
 
@@ -355,11 +361,16 @@ export default function Home() {
                 </div>
                 <div className="offer-scenario">
                   <div className="scenario-heading">
-                    <div><span>Wariant po negocjacji</span><small>Wpisz kurs albo poprawę w pipsach. Pełna kwota uwzględnia prowizje i opłaty.</small></div>
+                    <div><span>Szybkie liczenie w trakcie negocjacji</span><small>Sprawdź dowolny kurs lub zmianę w pipsach. Oferta zmieni się dopiero po użyciu przycisku poniżej.</small></div>
                   </div>
                   <div className="scenario-controls">
-                    <label><span>wynegocjowany kurs</span><input inputMode="decimal" value={rateInputValue} onChange={(event) => updateScenario(result.offer.id, "rate", event.target.value)} disabled={!result.valid} /></label>
-                    <label><span>poprawa w pipsach</span><div className="scenario-pips-input"><input inputMode="decimal" value={pipsInputValue} onChange={(event) => updateScenario(result.offer.id, "pips", event.target.value)} disabled={!result.valid} /><em>{model.buy ? "odejmij" : "dodaj"}</em></div></label>
+                    <label><span>kurs do sprawdzenia</span><input inputMode="decimal" value={rateInputValue} onChange={(event) => updateScenario(result.offer.id, "rate", event.target.value)} disabled={!result.valid} /></label>
+                    <div className="scenario-control-group"><span>zmiana w pipsach</span><div className="scenario-pips-input">
+                      <button type="button" aria-label="Odejmij 1 pips" disabled={!result.valid || !Number.isFinite(negotiatedPips) || negotiatedPips <= 0} onClick={() => nudgeScenarioPips(result.offer.id, pipsInputValue, -1)}>−</button>
+                      <input aria-label="Liczba pipsów do sprawdzenia" inputMode="decimal" value={pipsInputValue} onChange={(event) => updateScenario(result.offer.id, "pips", event.target.value)} disabled={!result.valid} />
+                      <em>pips</em>
+                      <button type="button" aria-label="Dodaj 1 pips" disabled={!result.valid} onClick={() => nudgeScenarioPips(result.offer.id, pipsInputValue, 1)}>+</button>
+                    </div><small className="scenario-direction-note">{model.buy ? "odejmowane od kursu oferty" : "dodawane do kursu oferty"}</small></div>
                   </div>
                   <div className="scenario-variants" aria-label={`Szybkie warianty dla ${result.offer.name || "oferty"}`}>
                     {variantQuotes.map((variant) => <button className={scenario.mode === "pips" && numberFrom(scenario.value) === variant.pips ? "active" : ""} type="button" key={variant.pips} disabled={!result.valid} onClick={() => updateScenario(result.offer.id, "pips", `${variant.pips}`)}>
@@ -367,12 +378,12 @@ export default function Home() {
                     </button>)}
                   </div>
                   <div className="scenario-summary">
-                    <div><span>po negocjacji</span><strong>{money(negotiatedQuote.total)}</strong><small>{pips(negotiatedQuote.effectivePips)} efektywnie</small></div>
+                    <div><span>sprawdzana kwota</span><strong>{money(negotiatedQuote.total)}</strong><small>{pips(negotiatedQuote.effectivePips)} efektywnie</small></div>
                     <div><span>zmiana</span><strong>{money(negotiatedDifference)}</strong><small>{pips(negotiatedPips)} lepiej</small></div>
                     <button type="button" disabled={!result.valid || !Number.isFinite(negotiatedRate) || negotiatedRate <= 0 || Math.abs(negotiatedRate - result.rate) < 0.0000001} onClick={() => {
                       updateOffer(result.offer.id, "rate", rate4(negotiatedRate));
                       updateScenario(result.offer.id, "pips", "0");
-                    }}>ustaw jako kurs oferty</button>
+                    }}>zapisz jako kurs oferty</button>
                   </div>
                 </div>
                 <div className="offer-meta">

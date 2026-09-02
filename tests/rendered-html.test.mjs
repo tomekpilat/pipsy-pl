@@ -44,8 +44,10 @@ test("server-renders the pipsy calculator at its own route", async () => {
   assert.match(html, /40 pips(?:<!-- -->)? efektywnie/);
   assert.match(html, /374[\s\u00a0]150 zł(?:<!-- -->)? łącznie/);
   assert.match(html, /łącznie/);
-  assert.match(html, /Wariant po negocjacji/);
-  assert.match(html, /ustaw jako kurs oferty/);
+  assert.match(html, /Szybkie liczenie w trakcie negocjacji/);
+  assert.match(html, /zapisz jako kurs oferty/);
+  assert.match(html, /Odejmij 1 pips/);
+  assert.match(html, /Dodaj 1 pips/);
   assert.match(html, /374[\s\u00a0]920 zł/);
   assert.match(html, /117 pips(?:<!-- -->)? efektywnie/);
   assert.match(html, /https:\/\/pipsy\.pl\/og-v2\.jpg/);
