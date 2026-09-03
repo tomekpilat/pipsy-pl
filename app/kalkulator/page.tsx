@@ -6,7 +6,6 @@ type Direction = "buy" | "sell";
 type Currency = "USD" | "EUR" | "GBP" | "CHF";
 type Offer = { id: string; name: string; rate: string; commissionPct: string; fixedFee: string; transferFee: string };
 type Preset = Omit<Offer, "rate">;
-type ScenarioDraft = { mode: "pips" | "rate"; value: string };
 
 const GRADE_STOPS = [
   { max: 50, label: "bardzo dobra", tone: "green" },
@@ -53,14 +52,13 @@ export default function Home() {
   const [currency, setCurrency] = useState<Currency>("USD");
   const [offers, setOffers] = useState<Offer[]>(INITIAL_OFFERS);
   const [presets, setPresets] = useState<Preset[]>(INITIAL_PRESETS);
-  const [scriptTarget, setScriptTarget] = useState("");
   const [tableBuy, setTableBuy] = useState("");
   const [tableSell, setTableSell] = useState("");
-  const [copyState, setCopyState] = useState<"idle" | "copied">("idle");
+  const [copiedScriptId, setCopiedScriptId] = useState("");
   const [savedId, setSavedId] = useState("");
   const [rankingIds, setRankingIds] = useState(() => INITIAL_OFFERS.map((offer) => offer.id));
   const [rankingDirty, setRankingDirty] = useState(false);
-  const [scenarioDrafts, setScenarioDrafts] = useState<Record<string, ScenarioDraft>>({});
+  const [comparisonPipsInput, setComparisonPipsInput] = useState("25");
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 20_000);
@@ -146,44 +144,15 @@ export default function Home() {
     return { total, effectivePips };
   };
 
-  const updateScenario = (id: string, mode: ScenarioDraft["mode"], value: string) => {
-    setScenarioDrafts((current) => ({ ...current, [id]: { mode, value } }));
-  };
+  const comparisonPipsValue = numberFrom(comparisonPipsInput);
+  const comparisonPips = Number.isFinite(comparisonPipsValue) ? Math.max(0, comparisonPipsValue) : Number.NaN;
 
-  const nudgeScenarioPips = (id: string, currentValue: string, change: number) => {
-    const currentPips = numberFrom(currentValue);
+  const nudgeComparisonPips = (change: number) => {
+    const currentPips = numberFrom(comparisonPipsInput);
     const nextPips = Math.max(0, Math.round(((Number.isFinite(currentPips) ? currentPips : 0) + change) * 10) / 10);
-    updateScenario(id, "pips", `${nextPips}`);
+    setComparisonPipsInput(`${nextPips}`);
+    setCopiedScriptId("");
   };
-
-  const selectedForScript = model.calculated.find((result) => result.valid && result.offer.id === scriptTarget)
-    ?? [...model.calculated].filter((result) => result.valid).sort((a, b) => b.effectivePips - a.effectivePips)[0];
-
-  const negotiationQuote = (rate: number) => {
-    if (!model.hasMid || !model.hasAmount || !Number.isFinite(rate)) return { total: Number.NaN, effectivePips: Number.NaN };
-    const percentagePoints = selectedForScript ? numberFrom(selectedForScript.offer.commissionPct) : 0;
-    const percentage = (Number.isFinite(percentagePoints) ? percentagePoints : 0) / 100;
-    const fixedFee = selectedForScript ? numberFrom(selectedForScript.offer.fixedFee) : 0;
-    const transferFee = selectedForScript ? numberFrom(selectedForScript.offer.transferFee) : 0;
-    const gross = model.amount * rate;
-    const fees = gross * percentage + (Number.isFinite(fixedFee) ? fixedFee : 0) + (Number.isFinite(transferFee) ? transferFee : 0);
-    const total = model.buy ? gross + fees : gross - fees;
-    const effectiveRate = total / model.amount;
-    const effectivePips = (model.buy ? effectiveRate - model.mid : model.mid - effectiveRate) * 10_000;
-    return { total, effectivePips };
-  };
-
-  const floorQuote = negotiationQuote(model.floor);
-  const openingQuote = negotiationQuote(model.opening);
-  const targetQuote = negotiationQuote(model.target);
-  const targetHighQuote = negotiationQuote(model.targetHigh);
-  const potentialSaving = displayedLeader?.valid && Number.isFinite(targetQuote.total)
-    ? Math.max(0, model.buy ? displayedLeader.total - targetQuote.total : targetQuote.total - displayedLeader.total)
-    : Number.NaN;
-
-  const negotiationScript = model.negotiable && selectedForScript
-    ? `${model.buy ? "Mam do kupienia" : "Mam do sprzedania"} ${model.amount.toLocaleString("pl-PL")} ${CURRENCY_WORDS[currency]}, transakcja dziś. Rynek jest na ${spokenRate(model.mid)}, wasz kurs to ${spokenRate(selectedForScript.rate)} — czyli ${Math.round(selectedForScript.effectivePips)} pipsów. Przy tym wolumenie oczekuję ${spokenRate(model.opening)} — ${Math.round(openingQuote.effectivePips)} pipsów efektywnie, ${money(openingQuote.total, 0)} łącznie.`
-    : "Wpisz kurs, kwotę i przynajmniej jedną ofertę — wtedy przygotuję zdanie do rozmowy.";
 
   const tableSkew = useMemo(() => {
     const buyRate = numberFrom(tableBuy);
@@ -199,7 +168,7 @@ export default function Home() {
     setOffers((current) => current.map((offer) => offer.id === id ? { ...offer, [field]: value } : offer));
     if (field !== "name") setRankingDirty(true);
     setSavedId("");
-    setCopyState("idle");
+    setCopiedScriptId("");
   };
 
   const addOffer = (preset?: Preset) => {
@@ -230,8 +199,8 @@ export default function Home() {
     try { window.localStorage.removeItem("pipsy.presets"); } catch {}
   };
 
-  const copyScript = async () => {
-    try { await navigator.clipboard.writeText(negotiationScript); setCopyState("copied"); } catch { setCopyState("idle"); }
+  const copyOfferScript = async (id: string, script: string) => {
+    try { await navigator.clipboard.writeText(script); setCopiedScriptId(id); } catch { setCopiedScriptId(""); }
   };
 
   const validCount = model.ranked.length;
@@ -239,23 +208,28 @@ export default function Home() {
 
   return (
     <div className="app-shell">
-      <aside className="control-panel">
+      <header className="control-panel">
         <a className="brand" aria-label="pipsy.pl — strona główna" href="/">
           <span className="brand-mark" aria-hidden="true"><i /><i /><i /></span>
           <span>pipsy<span>.pl</span></span>
         </a>
 
-        <section className="control-section">
+        <section className="control-section market-rate-section">
           <p className="eyebrow">Kurs rynkowy</p>
           <label className="sr-only" htmlFor="mid-rate">Średni kurs rynkowy</label>
           <input id="mid-rate" className={`mid-input age-${model.ageLevel}`} inputMode="decimal" value={midInput}
-            onChange={(event) => { setMidInput(event.target.value); setMidTimestamp(Date.now()); setCopyState("idle"); }} placeholder="3.7375" />
+            onChange={(event) => { setMidInput(event.target.value); setMidTimestamp(Date.now()); setCopiedScriptId(""); }} placeholder="3.7375" />
           <div className="rate-status-row">
             <span className={`rate-age age-${model.ageLevel}`}><i />{!model.hasMid ? "brak kursu" : model.ageMinutes < 1 ? "sprawdzony teraz" : `sprzed ${model.ageMinutes} min`}</span>
             <button className="subtle-button" type="button" onClick={() => setMidTimestamp(Date.now())}>odświeżyłem</button>
           </div>
           <p className="pair-label">{currency}/PLN</p>
           <p className="rate-source"><strong>Źródło: wpis ręczny.</strong> Kalkulator nie pobiera kursu online; wartość startowa 3,7375 jest tylko przykładem, nie kursem live.</p>
+          <label className="spread-control">
+            <span>połowa spreadu</span>
+            <input inputMode="decimal" value={halfSpreadInput} onChange={(event) => { setHalfSpreadInput(event.target.value); setCopiedScriptId(""); }} />
+            <span>= {Math.round(model.halfSpread * 10_000)} pips</span>
+          </label>
         </section>
 
         <section className="market-grid" aria-label="Parametry rynku">
@@ -264,33 +238,41 @@ export default function Home() {
           <div className="pip-tile"><span>1 pips</span><strong>{money(model.pipValue)}</strong><small>przy tej kwocie</small></div>
         </section>
 
-        <section className="control-section">
+        <section className="control-section transaction-section">
           <p className="eyebrow">Transakcja</p>
           <div className="direction-switch" role="group" aria-label="Kierunek transakcji">
-            <button type="button" className={model.buy ? "active" : ""} aria-pressed={model.buy} onClick={() => { setDirection("buy"); setRankingDirty(true); setCopyState("idle"); }}>kupuję</button>
-            <button type="button" className={!model.buy ? "active" : ""} aria-pressed={!model.buy} onClick={() => { setDirection("sell"); setRankingDirty(true); setCopyState("idle"); }}>sprzedaję</button>
+            <button type="button" className={model.buy ? "active" : ""} aria-pressed={model.buy} onClick={() => { setDirection("buy"); setRankingDirty(true); setCopiedScriptId(""); }}>kupuję</button>
+            <button type="button" className={!model.buy ? "active" : ""} aria-pressed={!model.buy} onClick={() => { setDirection("sell"); setRankingDirty(true); setCopiedScriptId(""); }}>sprzedaję</button>
           </div>
           <div className="amount-row">
             <label className="sr-only" htmlFor="amount">Kwota transakcji</label>
-            <input id="amount" inputMode="decimal" value={amountInput} onChange={(event) => { setAmountInput(event.target.value); setRankingDirty(true); setCopyState("idle"); }} />
+            <input id="amount" inputMode="decimal" value={amountInput} onChange={(event) => { setAmountInput(event.target.value); setRankingDirty(true); setCopiedScriptId(""); }} />
             <label className="sr-only" htmlFor="currency">Waluta</label>
-            <select id="currency" value={currency} onChange={(event) => setCurrency(event.target.value as Currency)}>
+            <select id="currency" value={currency} onChange={(event) => { setCurrency(event.target.value as Currency); setCopiedScriptId(""); }}>
               <option>USD</option><option>EUR</option><option>GBP</option><option>CHF</option>
             </select>
           </div>
           <p className="transaction-detail">wartość <strong>{money(model.notional, 0)}</strong> · ruch 25 pips <strong>{money(25 * model.pipValue, 0)}</strong></p>
         </section>
 
-        <label className="spread-control">
-          <span>połowa spreadu</span>
-          <input inputMode="decimal" value={halfSpreadInput} onChange={(event) => setHalfSpreadInput(event.target.value)} />
-          <span>= {Math.round(model.halfSpread * 10_000)} pips</span>
-        </label>
+        <section className="global-pips-panel" aria-labelledby="global-pips-title">
+          <p className="eyebrow" id="global-pips-title">Wspólny wariant negocjacji</p>
+          <div className="scenario-pips-input global-pips-input">
+            <button type="button" aria-label="Odejmij 1 pips we wszystkich ofertach" disabled={!Number.isFinite(comparisonPips) || comparisonPips <= 0} onClick={() => nudgeComparisonPips(-1)}>−</button>
+            <input aria-label="Wspólna liczba pipsów dla wszystkich ofert" inputMode="decimal" value={comparisonPipsInput} onChange={(event) => { setComparisonPipsInput(event.target.value); setCopiedScriptId(""); }} />
+            <em>pips</em>
+            <button type="button" aria-label="Dodaj 1 pips we wszystkich ofertach" onClick={() => nudgeComparisonPips(1)}>+</button>
+          </div>
+          <div className="global-pips-presets" aria-label="Szybki wybór pipsów">
+            {[10, 25, 50].map((value) => <button className={comparisonPips === value ? "active" : ""} type="button" key={value} onClick={() => { setComparisonPipsInput(`${value}`); setCopiedScriptId(""); }}>{value}</button>)}
+          </div>
+          <p>{model.buy ? "Odejmujemy od kursu każdej oferty." : "Dodajemy do kursu każdej oferty."} Wyniki i skrypty aktualizują się razem.</p>
+        </section>
 
         {model.ageLevel !== "fresh" && model.hasMid && <div className={`age-message ${model.ageLevel}`}>
           {model.ageLevel === "critical" ? "Kurs ma ponad pół godziny. Odśwież go — na starych danych ten kalkulator daje fałszywą pewność." : `Kurs sprzed ${model.ageMinutes} min. Zerknij jeszcze raz przed telefonem.`}
         </div>}
-      </aside>
+      </header>
 
       <main className="workspace">
         <header className="offers-header">
@@ -310,7 +292,7 @@ export default function Home() {
           {rankingDirty ? "Dane zmienione — kolejność i zwycięzca pozostają bez zmian do przeliczenia rankingu." : "Ranking aktualny — pipsy i kwoty policzone dla bieżących danych."}
         </p>
 
-        {!model.hasMid && <p className="empty-note">Wpisz kurs rynkowy w lewej kolumnie — bez niego nie ma do czego porównywać.</p>}
+        {!model.hasMid && <p className="empty-note">Wpisz kurs rynkowy w panelu u góry — bez niego nie ma do czego porównywać.</p>}
 
         <section className={`offer-list ${!model.hasMid ? "muted" : ""}`} aria-label="Porównanie ofert">
           {displayedResults.map((result) => {
@@ -318,32 +300,16 @@ export default function Home() {
             const isLeader = rank === 0;
             const grade = result.valid ? GRADE_STOPS.find((item) => result.effectivePips < item.max)! : null;
             const delta = result.valid && displayedLeader?.valid ? Math.abs(result.total - displayedLeader.total) : Number.NaN;
-            const scenario = scenarioDrafts[result.offer.id] ?? { mode: "pips", value: "25" };
-            const scenarioValue = numberFrom(scenario.value);
-            const negotiatedRate = scenario.mode === "rate"
-              ? scenarioValue
-              : result.valid && Number.isFinite(scenarioValue)
-                ? result.rate + (model.buy ? -1 : 1) * scenarioValue / 10_000
-                : Number.NaN;
-            const negotiatedPips = scenario.mode === "pips"
-              ? scenarioValue
-              : result.valid && Number.isFinite(negotiatedRate)
-                ? (model.buy ? result.rate - negotiatedRate : negotiatedRate - result.rate) * 10_000
-                : Number.NaN;
+            const negotiatedRate = result.valid && Number.isFinite(comparisonPips)
+              ? result.rate + (model.buy ? -1 : 1) * comparisonPips / 10_000
+              : Number.NaN;
             const negotiatedQuote = offerQuoteAtRate(result.offer, negotiatedRate);
             const negotiatedDifference = result.valid && Number.isFinite(negotiatedQuote.total)
               ? (model.buy ? result.total - negotiatedQuote.total : negotiatedQuote.total - result.total)
               : Number.NaN;
-            const rateInputValue = scenario.mode === "rate" ? scenario.value : rate4(negotiatedRate);
-            const pipsInputValue = scenario.mode === "pips" ? scenario.value : Number.isFinite(negotiatedPips) ? `${Math.round(negotiatedPips * 10) / 10}` : "";
-            const variantQuotes = [10, 25, 50].map((variantPips) => {
-              const variantRate = result.valid ? result.rate + (model.buy ? -1 : 1) * variantPips / 10_000 : Number.NaN;
-              return { pips: variantPips, rate: variantRate, quote: offerQuoteAtRate(result.offer, variantRate) };
-            });
-            const presetScenario = scenario.mode === "pips" && variantQuotes.some((variant) => variant.pips === scenarioValue);
-            const customVariant = !presetScenario && result.valid && Number.isFinite(negotiatedRate) && Math.abs(negotiatedRate - result.rate) > 0.0000001
-              ? { pips: negotiatedPips, rate: negotiatedRate, quote: negotiatedQuote }
-              : null;
+            const offerScript = result.valid && Number.isFinite(negotiatedRate)
+              ? `${model.buy ? "Mam do kupienia" : "Mam do sprzedania"} ${model.amount.toLocaleString("pl-PL")} ${CURRENCY_WORDS[currency]}, transakcja dziś. Rynek jest na ${spokenRate(model.mid)}, a Państwa kurs to ${spokenRate(result.rate)} — ${Math.round(result.effectivePips)} pipsów efektywnie. Proszę o ${spokenRate(negotiatedRate)}, czyli poprawę o ${Math.round(comparisonPips)} pipsów. Po prowizjach daje to ${Math.round(negotiatedQuote.effectivePips)} pipsów i ${money(negotiatedQuote.total, 0)} łącznie.`
+              : "Uzupełnij kurs oferty, aby otrzymać gotowy skrypt rozmowy.";
             let warning = "";
             if (result.valid && model.buy && result.rate < model.ask) warning = "Kurs poniżej rynkowego — sprawdź, czy to na pewno kurs sprzedaży waluty przez tę instytucję.";
             else if (result.valid && !model.buy && result.rate > model.bid) warning = "Kurs powyżej rynkowego — sprawdź, czy to kurs, po którym instytucja kupuje walutę od ciebie.";
@@ -369,16 +335,7 @@ export default function Home() {
                 </div>
                 <div className="offer-scenario">
                   <div className="scenario-heading">
-                    <div><span>Szybkie liczenie w trakcie negocjacji</span><small>Zmień kurs albo pipsy — wynik zobaczysz w wyróżnionym rzędzie.</small></div>
-                  </div>
-                  <div className="scenario-controls">
-                    <label><span>kurs do sprawdzenia</span><input inputMode="decimal" value={rateInputValue} onChange={(event) => updateScenario(result.offer.id, "rate", event.target.value)} disabled={!result.valid} /></label>
-                    <div className="scenario-control-group"><span>zmiana w pipsach</span><div className="scenario-pips-input">
-                      <button type="button" aria-label="Odejmij 1 pips" disabled={!result.valid || !Number.isFinite(negotiatedPips) || negotiatedPips <= 0} onClick={() => nudgeScenarioPips(result.offer.id, pipsInputValue, -1)}>−</button>
-                      <input aria-label="Liczba pipsów do sprawdzenia" inputMode="decimal" value={pipsInputValue} onChange={(event) => updateScenario(result.offer.id, "pips", event.target.value)} disabled={!result.valid} />
-                      <em>pips</em>
-                      <button type="button" aria-label="Dodaj 1 pips" disabled={!result.valid} onClick={() => nudgeScenarioPips(result.offer.id, pipsInputValue, 1)}>+</button>
-                    </div><small className="scenario-direction-note">{model.buy ? "odejmowane od kursu oferty" : "dodawane do kursu oferty"}</small></div>
+                    <div><span>Porównanie przy {pips(comparisonPips)} zmiany</span><small>Wspólna wartość z panelu u góry.</small></div>
                   </div>
                   <div className="quote-table" aria-label={`Kursy i kwoty dla ${result.offer.name || "oferty"}`}>
                     <div className="quote-table-head" aria-hidden="true"><span>kurs</span><span>zmiana</span><span>pipsy efektywnie</span><span>ostateczna kwota</span></div>
@@ -388,30 +345,24 @@ export default function Home() {
                       <div data-label="pipsy efektywnie"><span className={`quote-grade grade-${grade?.tone ?? "neutral"}`}>{result.valid ? `${Math.round(result.effectivePips)} pips · ${grade?.label}` : "— · brak oceny"}</span></div>
                       <div className="quote-amount" data-label="ostateczna kwota"><strong>{result.valid ? money(result.total) : "—"}</strong><small>{!result.valid ? "wpisz kurs" : isLeader ? (model.buy ? "najniższy koszt" : "najwyższy przychód") : Number.isFinite(delta) ? `${model.buy ? "+" : "−"}${money(delta, 0)} względem lidera` : "przelicz ranking"}</small></div>
                     </div>
-                    {variantQuotes.map((variant) => {
-                      const active = scenario.mode === "pips" && scenarioValue === variant.pips;
-                      const difference = result.valid && Number.isFinite(variant.quote.total)
-                        ? Math.abs(variant.quote.total - result.total)
-                        : Number.NaN;
-                      return <div className={`quote-row quote-row-calculated ${active ? "active" : ""}`} key={variant.pips}>
-                        <div data-label="kurs"><small>wyliczenie</small><strong>{rate4(variant.rate)}</strong></div>
-                        <div data-label="zmiana"><button className="quote-variant-button" type="button" disabled={!result.valid} onClick={() => updateScenario(result.offer.id, "pips", `${variant.pips}`)}>{model.buy ? "−" : "+"}{variant.pips} pips</button></div>
-                        <div data-label="pipsy efektywnie"><strong>{pips(variant.quote.effectivePips)}</strong></div>
-                        <div className="quote-amount" data-label="ostateczna kwota"><strong>{money(variant.quote.total)}</strong><small>{money(difference, 0)} lepiej od oferty</small></div>
-                      </div>;
-                    })}
-                    {customVariant && <div className="quote-row quote-row-calculated active">
-                      <div data-label="kurs"><small>własny wariant</small><strong>{rate4(customVariant.rate)}</strong></div>
-                      <div data-label="zmiana"><strong>{customVariant.rate >= result.rate ? "+" : "−"}{pips(Math.abs((customVariant.rate - result.rate) * 10_000))}</strong></div>
-                      <div data-label="pipsy efektywnie"><strong>{pips(customVariant.quote.effectivePips)}</strong></div>
-                      <div className="quote-amount" data-label="ostateczna kwota"><strong>{money(customVariant.quote.total)}</strong><small>{money(Math.abs(negotiatedDifference), 0)} {negotiatedDifference >= 0 ? "lepiej" : "gorzej"} od oferty</small></div>
-                    </div>}
+                    <div className="quote-row quote-row-calculated active">
+                      <div data-label="kurs"><small>wariant negocjacji</small><strong>{rate4(negotiatedRate)}</strong></div>
+                      <div data-label="zmiana"><strong>{model.buy ? "−" : "+"}{pips(comparisonPips)}</strong></div>
+                      <div data-label="pipsy efektywnie"><strong>{pips(negotiatedQuote.effectivePips)}</strong></div>
+                      <div className="quote-amount" data-label="ostateczna kwota"><strong>{money(negotiatedQuote.total)}</strong><small>{money(Math.abs(negotiatedDifference), 0)} {negotiatedDifference >= 0 ? "lepiej" : "gorzej"} od oferty</small></div>
+                    </div>
                   </div>
                   <button className="apply-quote-button" type="button" disabled={!result.valid || !Number.isFinite(negotiatedRate) || negotiatedRate <= 0 || Math.abs(negotiatedRate - result.rate) < 0.0000001} onClick={() => {
                       updateOffer(result.offer.id, "rate", rate4(negotiatedRate));
-                      updateScenario(result.offer.id, "pips", "0");
                     }}>zapisz wyróżniony kurs jako ofertę</button>
                 </div>
+                <section className="offer-script" aria-labelledby={`script-${result.offer.id}`}>
+                  <div className="offer-script-heading">
+                    <div><span>Skrypt rozmowy</span><strong id={`script-${result.offer.id}`}>{result.offer.name || "oferta bez nazwy"}</strong></div>
+                    <button type="button" disabled={!result.valid} onClick={() => copyOfferScript(result.offer.id, offerScript)}>{copiedScriptId === result.offer.id ? "skopiowane" : "kopiuj"}</button>
+                  </div>
+                  <blockquote>„{offerScript}”</blockquote>
+                </section>
                 <div className="offer-meta">
                   {result.valid && <span>kurs efektywny {rate4(result.effectiveRate)} · prowizje i opłaty {money(result.commission + (numberFrom(result.offer.transferFee) || 0), 0)} = {Math.round(result.fixedFeePips)} pips stałych</span>}
                 </div>
@@ -424,40 +375,16 @@ export default function Home() {
         {validCount === 1 && <p className="hint-line">Jedna oferta to jeszcze nie ranking — dodaj drugą, żeby zobaczyć różnicę w złotówkach.</p>}
         {nearTie && <p className="hint-line">Praktycznie remis — różnica poniżej 20 zł. Wybierz wygodniejszą opcję.</p>}
 
-        <section className="negotiation">
-          <p className="eyebrow light">Negocjacja</p>
-          {model.negotiable ? <>
-            {selectedForScript && <p className="negotiation-context">Pipsy efektywne i kwoty łączne dla: <strong>{selectedForScript.offer.name || "oferta bez nazwy"}</strong> — z prowizjami i opłatami.</p>}
-            <div className="negotiation-grid">
-              <div><span>podłoga</span><strong>{rate4(model.floor)}</strong><small>{pips(floorQuote.effectivePips)} efektywnie · {money(floorQuote.total, 0)} łącznie</small><small className="negotiation-note">niżej dealer nie zejdzie</small></div>
-              <div className="opening"><span>otwórz od</span><strong>{rate4(model.opening)}</strong><small>{pips(openingQuote.effectivePips)} efektywnie · {money(openingQuote.total, 0)} łącznie</small><small className="negotiation-note">mów na głos</small></div>
-              <div><span>realny cel</span><strong>{rate4(model.target)}</strong><small>{pips(targetQuote.effectivePips)} efektywnie · {money(targetQuote.total, 0)} łącznie</small><small className="negotiation-note">zakres {rate4(model.target)}–{rate4(model.targetHigh)} · {pips(targetQuote.effectivePips)}–{pips(targetHighQuote.effectivePips)}</small></div>
-              <div><span>do zyskania</span><strong>{money(potentialSaving, 0)}</strong><small>{pips(potentialSaving / model.pipValue)} wobec lidera</small></div>
-            </div>
-
-            <div className="script-card">
-              <div className="script-header">
-                <span className="eyebrow">Co powiedzieć</span>
-                <label className="sr-only" htmlFor="script-target">Oferta do negocjacji</label>
-                <select id="script-target" value={selectedForScript?.offer.id ?? ""} onChange={(event) => { setScriptTarget(event.target.value); setCopyState("idle"); }}>
-                  {model.calculated.filter((item) => item.valid).map((item) => <option key={item.offer.id} value={item.offer.id}>{item.offer.name || "bez nazwy"} · {rate4(item.rate)}</option>)}
-                </select>
-              </div>
-              <blockquote>„{negotiationScript}”</blockquote>
-              <div className="script-actions">
-                <button type="button" onClick={copyScript}>{copyState === "copied" ? "skopiowane" : "kopiuj zdanie"}</button>
-                {tableSkew && <p>{tableSkew}</p>}
-              </div>
-            </div>
-
-            <div className="table-skew">
-              <p>Masz tabelę banku? Wpisz oba kursy — sprawdzimy asymetrię.</p>
-              <label><span>kupno</span><input inputMode="decimal" value={tableBuy} onChange={(event) => setTableBuy(event.target.value)} placeholder="—" /></label>
-              <label><span>sprzedaż</span><input inputMode="decimal" value={tableSell} onChange={(event) => setTableSell(event.target.value)} placeholder="—" /></label>
-            </div>
-          </> : <p className="not-negotiable">
-            {model.hasMid && model.hasAmount ? `Przy ${model.amount.toLocaleString("pl-PL")} ${currency} (${money(model.notional, 0)}) banki zwykle nie dają dostępu do dealing desku. Wybierz najtańszą ofertę z listy — 35 pipsów byłoby tu warte tylko ${money(35 * model.pipValue)}.` : "Uzupełnij kurs i kwotę, a policzymy, czy jest o co negocjować."}
-          </p>}
+        <section className="negotiation negotiation-argument">
+          <div>
+            <p className="eyebrow light">Dodatkowy argument do rozmowy</p>
+            <p className="negotiation-context">Każda oferta ma teraz własny skrypt bezpośrednio pod wyliczeniem. Tu możesz dodatkowo sprawdzić asymetrię tabeli bankowej.</p>
+          </div>
+          <div className="table-skew">
+            <label><span>kurs kupna banku</span><input inputMode="decimal" value={tableBuy} onChange={(event) => setTableBuy(event.target.value)} placeholder="—" /></label>
+            <label><span>kurs sprzedaży banku</span><input inputMode="decimal" value={tableSell} onChange={(event) => setTableSell(event.target.value)} placeholder="—" /></label>
+            <p>{tableSkew || "Wpisz oba kursy z tabeli — pokażemy, czy środek jest przesunięty przeciw Tobie."}</p>
+          </div>
         </section>
 
         <footer className="app-footer">

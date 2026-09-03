@@ -37,14 +37,12 @@ test("server-renders the pipsy calculator at its own route", async () => {
   const html = await response.text();
   assert.match(html, /Kurs rynkowy/);
   assert.match(html, /Porównanie ofert/);
-  assert.match(html, /Negocjacja/);
+  assert.match(html, /Wspólny wariant negocjacji/);
   assert.match(html, /375[\s\u00a0]170,00 zł/);
   assert.match(html, /przelicz ranking/);
   assert.match(html, /Ranking aktualny/);
-  assert.match(html, /40 pips(?:<!-- -->)? efektywnie/);
-  assert.match(html, /374[\s\u00a0]150 zł(?:<!-- -->)? łącznie/);
   assert.match(html, /łącznie/);
-  assert.match(html, /Szybkie liczenie w trakcie negocjacji/);
+  assert.match(html, /Porównanie przy/);
   assert.match(html, /obecna oferta/);
   assert.match(html, /ostateczna kwota/);
   assert.match(html, /142 pips(?:<!-- -->)? · (?:<!-- -->)?słaba — negocjuj/);
@@ -53,6 +51,11 @@ test("server-renders the pipsy calculator at its own route", async () => {
   assert.match(html, /Dodaj 1 pips/);
   assert.match(html, /374[\s\u00a0]920,00 zł/);
   assert.match(html, /117 pips/);
+  assert.equal((html.match(/Wspólna liczba pipsów dla wszystkich ofert/g) ?? []).length, 1);
+  assert.equal((html.match(/Skrypt rozmowy/g) ?? []).length, 3);
+  assert.match(html, /id="script-o1"/);
+  assert.match(html, /id="script-o2"/);
+  assert.match(html, /id="script-o3"/);
   assert.match(html, /https:\/\/pipsy\.pl\/og-v2\.jpg/);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape|react-loading-skeleton/i);
 });
