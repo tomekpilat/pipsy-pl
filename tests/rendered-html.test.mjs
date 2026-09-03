@@ -41,8 +41,9 @@ test("server-renders the pipsy calculator at its own route", async () => {
   assert.ok(html.indexOf("Oferty") < html.indexOf("Wspólny wariant negocjacji"));
   assert.ok(html.indexOf("Wspólny wariant negocjacji") < html.indexOf("Porównanie ofert"));
   assert.match(html, /375[\s\u00a0]170,00 zł/);
-  assert.match(html, /przelicz ranking/);
-  assert.match(html, /Ranking aktualny/);
+  assert.doesNotMatch(html, /przelicz ranking|Ranking aktualny|2\. miejsce|najtaniej/);
+  assert.equal((html.match(/quote-row-best/g) ?? []).length, 1);
+  assert.match(html, /najniższy koszt/);
   assert.match(html, /łącznie/);
   assert.equal((html.match(/Warianty tej oferty/g) ?? []).length, 2);
   assert.match(html, /obecna oferta/);

@@ -55,8 +55,6 @@ export default function Home() {
   const [tableSell, setTableSell] = useState("");
   const [copiedScriptId, setCopiedScriptId] = useState("");
   const [savedId, setSavedId] = useState("");
-  const [rankingIds, setRankingIds] = useState(() => INITIAL_OFFERS.map((offer) => offer.id));
-  const [rankingDirty, setRankingDirty] = useState(false);
   const [comparisonPipsInput, setComparisonPipsInput] = useState("25");
 
   useEffect(() => {
@@ -114,17 +112,8 @@ export default function Home() {
     return { mid, amount, halfSpread, hasMid, hasAmount, buy, ask, bid, pipValue, notional, calculated, ranked, negotiable, floor, opening, target, targetHigh, ageMinutes, ageLevel };
   }, [midInput, amountInput, halfSpreadInput, direction, offers, now, midTimestamp]);
 
-  const displayedResults = useMemo(() => {
-    const positions = new Map(rankingIds.map((id, index) => [id, index]));
-    return [...model.calculated].sort((a, b) => {
-      const aPosition = positions.get(a.offer.id) ?? Number.MAX_SAFE_INTEGER;
-      const bPosition = positions.get(b.offer.id) ?? Number.MAX_SAFE_INTEGER;
-      return aPosition - bPosition;
-    });
-  }, [model.calculated, rankingIds]);
-
-  const displayedValid = displayedResults.filter((result) => result.valid);
-  const displayedLeader = displayedResults.find((result) => result.offer.id === rankingIds[0]);
+  const displayedResults = model.calculated;
+  const bestResult = model.ranked[0];
   const pipsFromMid = (rate: number) => Number.isFinite(rate) && model.hasMid
     ? (model.buy ? rate - model.mid : model.mid - rate) * 10_000
     : Number.NaN;
@@ -165,7 +154,6 @@ export default function Home() {
 
   const updateOffer = (id: string, field: keyof Omit<Offer, "id">, value: string) => {
     setOffers((current) => current.map((offer) => offer.id === id ? { ...offer, [field]: value } : offer));
-    if (field !== "name") setRankingDirty(true);
     setSavedId("");
     setCopiedScriptId("");
   };
@@ -175,15 +163,6 @@ export default function Home() {
       id: `o${Date.now()}`, name: preset?.name ?? "", rate: "", commissionPct: preset?.commissionPct ?? "",
       fixedFee: preset?.fixedFee ?? "", transferFee: preset?.transferFee ?? "",
     }]);
-    setRankingDirty(true);
-  };
-
-  const commitRanking = () => {
-    setRankingIds([
-      ...model.ranked.map((result) => result.offer.id),
-      ...model.calculated.filter((result) => !result.valid).map((result) => result.offer.id),
-    ]);
-    setRankingDirty(false);
   };
 
   const savePreset = (offer: Offer) => {
@@ -203,7 +182,7 @@ export default function Home() {
   };
 
   const validCount = model.ranked.length;
-  const nearTie = displayedValid.length >= 2 && Math.abs(displayedValid[0].total - displayedValid[1].total) < 20;
+  const nearTie = model.ranked.length >= 2 && Math.abs(model.ranked[0].total - model.ranked[1].total) < 20;
 
   return (
     <div className="app-shell">
@@ -240,12 +219,12 @@ export default function Home() {
         <section className="control-section transaction-section">
           <p className="eyebrow">Transakcja</p>
           <div className="direction-switch" role="group" aria-label="Kierunek transakcji">
-            <button type="button" className={model.buy ? "active" : ""} aria-pressed={model.buy} onClick={() => { setDirection("buy"); setRankingDirty(true); setCopiedScriptId(""); }}>kupuję</button>
-            <button type="button" className={!model.buy ? "active" : ""} aria-pressed={!model.buy} onClick={() => { setDirection("sell"); setRankingDirty(true); setCopiedScriptId(""); }}>sprzedaję</button>
+            <button type="button" className={model.buy ? "active" : ""} aria-pressed={model.buy} onClick={() => { setDirection("buy"); setCopiedScriptId(""); }}>kupuję</button>
+            <button type="button" className={!model.buy ? "active" : ""} aria-pressed={!model.buy} onClick={() => { setDirection("sell"); setCopiedScriptId(""); }}>sprzedaję</button>
           </div>
           <div className="amount-row">
             <label className="sr-only" htmlFor="amount">Kwota transakcji</label>
-            <input id="amount" inputMode="decimal" value={amountInput} onChange={(event) => { setAmountInput(event.target.value); setRankingDirty(true); setCopiedScriptId(""); }} />
+            <input id="amount" inputMode="decimal" value={amountInput} onChange={(event) => { setAmountInput(event.target.value); setCopiedScriptId(""); }} />
             <label className="sr-only" htmlFor="currency">Waluta</label>
             <select id="currency" value={currency} onChange={(event) => { setCurrency(event.target.value as Currency); setCopiedScriptId(""); }}>
               <option>USD</option><option>EUR</option><option>GBP</option><option>CHF</option>
@@ -261,7 +240,7 @@ export default function Home() {
 
       <main className="workspace">
         <header className="offers-header">
-          <h1>Oferty <span>— {model.buy ? "od najtańszej" : "od najbardziej opłacalnej"}</span></h1>
+          <h1>Oferty <span>— porównanie kwot końcowych</span></h1>
           <div className="header-actions">
             <label className="sr-only" htmlFor="preset">Dodaj z zapisanych profili</label>
             <select id="preset" defaultValue="" onChange={(event) => { const preset = presets.find((item) => item.id === event.target.value); if (preset) addOffer(preset); event.target.value = ""; }}>
@@ -269,7 +248,6 @@ export default function Home() {
               {presets.map((preset) => <option key={preset.id} value={preset.id}>{preset.name}</option>)}
             </select>
             <button className="primary-button" type="button" onClick={() => addOffer()}>+ oferta</button>
-            <button className={`rank-button ${rankingDirty ? "pending" : ""}`} type="button" onClick={commitRanking}>przelicz ranking</button>
           </div>
         </header>
 
@@ -287,18 +265,13 @@ export default function Home() {
           <p>{model.buy ? "Odejmujemy od kursu każdej oferty." : "Dodajemy do kursu każdej oferty."} Wyniki i skrypty aktualizują się razem.</p>
         </section>
 
-        <p className={`ranking-status ${rankingDirty ? "pending" : ""}`} role="status">
-          {rankingDirty ? "Dane zmienione — kolejność i zwycięzca pozostają bez zmian do przeliczenia rankingu." : "Ranking aktualny — pipsy i kwoty policzone dla bieżących danych."}
-        </p>
-
         {!model.hasMid && <p className="empty-note">Wpisz kurs rynkowy w panelu u góry — bez niego nie ma do czego porównywać.</p>}
 
         <section className={`offer-list ${!model.hasMid ? "muted" : ""}`} aria-label="Porównanie ofert">
           {displayedResults.map((result) => {
-            const rank = rankingIds.indexOf(result.offer.id);
-            const isLeader = rank === 0;
+            const isBest = result.valid && result.offer.id === bestResult?.offer.id;
             const grade = result.valid ? GRADE_STOPS.find((item) => result.effectivePips < item.max)! : null;
-            const delta = result.valid && displayedLeader?.valid ? Math.abs(result.total - displayedLeader.total) : Number.NaN;
+            const deltaFromBest = result.valid && bestResult?.valid ? Math.abs(result.total - bestResult.total) : Number.NaN;
             const negotiatedRate = result.valid && Number.isFinite(comparisonPips)
               ? result.rate + (model.buy ? -1 : 1) * comparisonPips / 10_000
               : Number.NaN;
@@ -324,15 +297,14 @@ export default function Home() {
             else if (result.percentagePoints > 2) warning = "Prowizja powyżej 2% jest nietypowo wysoka — sprawdź, od jakiej kwoty jest liczona.";
             else if (result.valid && result.fixedFeePips > 100) warning = `Opłaty stałe to ${Math.round(result.fixedFeePips)} pipsów — przy tej kwocie ważą więcej niż sam kurs.`;
 
-            return <article className={`offer-card ${isLeader ? "leader" : ""}`} key={result.offer.id}>
+            return <article className="offer-card" key={result.offer.id}>
               <div className="offer-body">
                 <div className="offer-title-row">
-                  <span className={`rank-badge ${isLeader && result.valid ? "leader" : ""}`}>{!result.valid ? "uzupełnij" : rank < 0 ? "nieprzeliczona" : isLeader ? (model.buy ? "najtaniej" : "najwięcej") : `${rank + 1}. miejsce`}</span>
                   <label className="sr-only" htmlFor={`name-${result.offer.id}`}>Nazwa oferty</label>
                   <input id={`name-${result.offer.id}`} className="offer-name" value={result.offer.name} onChange={(event) => updateOffer(result.offer.id, "name", event.target.value)} placeholder="nazwa oferty" />
                   <div className="offer-actions">
                     <button type="button" onClick={() => savePreset(result.offer)}>{savedId === result.offer.id ? "zapisane" : "zapisz"}</button>
-                    <button type="button" disabled={offers.length <= 1} onClick={() => { setOffers((current) => current.filter((offer) => offer.id !== result.offer.id)); setRankingDirty(true); }}>usuń</button>
+                    <button type="button" disabled={offers.length <= 1} onClick={() => setOffers((current) => current.filter((offer) => offer.id !== result.offer.id))}>usuń</button>
                   </div>
                 </div>
                 <div className="offer-fields">
@@ -347,11 +319,11 @@ export default function Home() {
                   </div>
                   <div className="quote-table" aria-label={`Kursy i kwoty dla ${result.offer.name || "oferty"}`}>
                     <div className="quote-table-head" aria-hidden="true"><span>kurs</span><span>zmiana</span><span>pipsy efektywnie</span><span>ostateczna kwota</span></div>
-                    <div className={`quote-row quote-row-current ${comparisonPips === 0 ? "active" : ""}`}>
+                    <div className={`quote-row quote-row-current ${isBest ? "quote-row-best" : ""} ${comparisonPips === 0 ? "active" : ""}`}>
                       <div data-label="kurs"><small>obecna oferta</small><strong>{result.valid ? rate4(result.rate) : "—"}</strong></div>
                       <div data-label="zmiana"><strong>0 pips</strong></div>
                       <div data-label="pipsy efektywnie"><span className={`quote-grade grade-${grade?.tone ?? "neutral"}`}>{result.valid ? `${Math.round(result.effectivePips)} pips · ${grade?.label}` : "— · brak oceny"}</span></div>
-                      <div className="quote-amount" data-label="ostateczna kwota"><strong>{result.valid ? money(result.total) : "—"}</strong><small>{!result.valid ? "wpisz kurs" : isLeader ? (model.buy ? "najniższy koszt" : "najwyższy przychód") : Number.isFinite(delta) ? `${model.buy ? "+" : "−"}${money(delta, 0)} względem lidera` : "przelicz ranking"}</small></div>
+                      <div className="quote-amount" data-label="ostateczna kwota"><strong>{result.valid ? money(result.total) : "—"}</strong><small>{!result.valid ? "wpisz kurs" : isBest ? (model.buy ? "najniższy koszt" : "najwyższy przychód") : Number.isFinite(deltaFromBest) ? `${model.buy ? "+" : "−"}${money(deltaFromBest, 0)} względem najlepszej oferty` : "brak porównania"}</small></div>
                     </div>
                     {variantQuotes.map((variant) => <div className={`quote-row quote-row-calculated ${comparisonPips === variant.pips ? "active" : ""}`} key={variant.pips}>
                       <div data-label="kurs"><small>wariant {variant.pips} pips</small><strong>{rate4(variant.rate)}</strong></div>

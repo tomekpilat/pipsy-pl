@@ -99,20 +99,12 @@ input[type="number"]::-webkit-inner-spin-button { appearance: none; }
 .header-actions select, .script-header select { min-height: 40px; padding: 10px; border: 1px solid #cfd4da; border-radius: 3px; outline: none; background: #fcfcfd; font-size: 12px; }
 .primary-button { min-height: 40px; padding: 12px 15px; border: 0; border-radius: 3px; background: var(--navy); color: #f8f9fa; font-size: 12px; font-weight: 500; }
 .primary-button:hover { background: var(--navy-dark); }
-.rank-button { min-height: 40px; padding: 10px 13px; border: 1px solid #aeb5bf; border-radius: 3px; background: #f8f9fa; color: #4d5560; font-size: 12px; font-weight: 600; }
-.rank-button:hover { border-color: #7f8996; background: #fff; }
-.rank-button.pending { border-color: #cfad42; background: #fff5cf; color: #665016; }
-.ranking-status { margin: -8px 0 0; color: #737981; font-size: 11px; line-height: 1.5; }
-.ranking-status.pending { color: #8a6716; }
 .empty-note, .hint-line { margin: 0; color: #71777e; font-size: 12px; line-height: 1.55; }
 .offer-list { display: grid; grid-template-columns: repeat(auto-fit,minmax(440px,1fr)); align-items: start; gap: 12px; }
 .offer-list.muted { opacity: .48; pointer-events: none; }
 .offer-card { min-width: 0; border: 1px solid #e1e4e7; border-radius: 4px; background: rgba(253,253,254,.8); overflow: hidden; }
-.offer-card.leader { border-color: #d8c376; background: #fffdf4; box-shadow: 0 2px 10px rgba(70,61,25,.04); }
 .offer-body { min-width: 0; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
 .offer-title-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.rank-badge { padding: 5px 8px; border-radius: 2px; background: #eef0f2; color: #757b82; font-size: 10px; font-weight: 500; line-height: 1; letter-spacing: .08em; text-transform: uppercase; }
-.rank-badge.leader { background: #f3dc89; color: #5a481d; }
 .offer-name { flex: 1 1 140px; min-width: 100px; padding: 4px 0; border: 0; border-bottom: 1px solid transparent; outline: none; background: transparent; font-size: 16px; font-weight: 600; }
 .offer-name:focus { border-bottom-color: #71819b; }
 .offer-fields { display: grid; grid-template-columns: repeat(2,minmax(80px,1fr)); gap: 8px; }
@@ -135,6 +127,8 @@ input[type="number"]::-webkit-inner-spin-button { appearance: none; }
 .quote-row-current { border-top: 0; background: #fafbfb; }
 .quote-row-calculated { background: #f6f8fb; }
 .quote-row.active { position: relative; background: #fff9e4; box-shadow: inset 3px 0 0 #d1ad39; }
+.quote-row-current.quote-row-best { position: relative; background: #edf8f1; box-shadow: inset 3px 0 0 #3d9a66; }
+.quote-row-current.quote-row-best .quote-amount strong { color: #247047 !important; }
 .quote-row > div { min-width: 0; }
 .quote-row > div::before { content: attr(data-label); display: none; margin-bottom: 4px; color: #8a9097; font-size: 8px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
 .quote-row small { display: block; color: #7b828b; font-size: 9px; line-height: 1.4; }
@@ -213,7 +207,7 @@ input[type="number"]::-webkit-inner-spin-button { appearance: none; }
   .control-panel { padding: 18px 16px; grid-template-columns: 1fr; gap: 16px; }
   .workspace { padding: 18px 12px 36px; gap: 16px; }
   .brand { margin-bottom: 2px; }
-  .subtle-button, .header-actions select, .primary-button, .rank-button, .offer-actions button, .quote-variant-button, .offer-script-heading button, .app-footer button { min-height: 44px; }
+  .subtle-button, .header-actions select, .primary-button, .offer-actions button, .quote-variant-button, .offer-script-heading button, .app-footer button { min-height: 44px; }
   .amount-row input, .amount-row select, .spread-control input, .offer-fields input, .global-pips-input input, .header-actions select, .table-skew input { font-size: 16px; }
   .offers-header { align-items: stretch; }
   .header-actions { width: 100%; }
@@ -249,7 +243,6 @@ input[type="number"]::-webkit-inner-spin-button { appearance: none; }
   .quote-amount strong { font-size: 22px !important; }
   .apply-quote-button { width: 100%; min-height: 44px; }
   .offer-actions { justify-content: flex-end; }
-  .rank-button { width: 100%; }
   .negotiation { padding: 17px 12px; margin-inline: 0; }
   .offer-script blockquote { overflow-wrap: anywhere; }
 }
