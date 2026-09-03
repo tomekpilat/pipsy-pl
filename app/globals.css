@@ -128,7 +128,7 @@ input[type="number"]::-webkit-inner-spin-button { appearance: none; }
 .quote-row { min-height: 74px; padding: 11px 12px; display: grid; grid-template-columns: minmax(64px,.65fr) minmax(76px,.8fr) minmax(92px,1fr) minmax(138px,1.35fr); align-items: center; gap: 10px; border-top: 1px solid #e2e5e8; background: #fff; }
 .quote-row-current { border-top: 0; background: #fafbfb; }
 .quote-row-calculated { background: #f6f8fb; }
-.quote-row.active { position: relative; background: #fff9e4; box-shadow: inset 3px 0 0 #d1ad39; }
+.quote-row.active { position: relative; min-height: 108px; background: #fff9e4; box-shadow: inset 3px 0 0 #d1ad39; }
 .quote-row-comparison-best { background: #edf8f1 !important; box-shadow: inset 3px 0 0 #3d9a66 !important; }
 .quote-row-comparison-best .quote-amount strong { color: #247047 !important; }
 .quote-row-current.quote-row-best { position: relative; background: #edf8f1; box-shadow: inset 3px 0 0 #3d9a66; }
@@ -142,6 +142,7 @@ input[type="number"]::-webkit-inner-spin-button { appearance: none; }
 .quote-amount strong { color: #222a34 !important; font-size: 20px !important; font-weight: 500 !important; line-height: 1.1 !important; letter-spacing: -.035em; font-variant-numeric: tabular-nums; }
 .quote-row-calculated .quote-amount strong { color: #475873 !important; }
 .quote-amount small { min-height: 14px; margin-top: 3px; overflow: hidden; font-size: 10px; line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
+.quote-row.active .quote-amount small { min-height: 42px; overflow: visible; text-overflow: clip; white-space: normal; }
 .quote-change { color: #4c5663; }
 .apply-quote-button { width: 100%; min-height: 40px; padding: 10px 13px; border: 0; border-radius: 3px; background: #4b5668; color: #fff; font-size: 10px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; }
 .apply-quote-button:hover { background: #343b49; }

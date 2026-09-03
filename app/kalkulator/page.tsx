@@ -138,9 +138,11 @@ export default function Home() {
       : Number.NaN;
     return { offerId: result.offer.id, quote: offerQuoteAtRate(result.offer, rate) };
   });
-  const bestComparisonResult = comparisonResults
+  const rankedComparisonResults = comparisonResults
     .filter((result) => Number.isFinite(result.quote.total))
-    .sort((a, b) => model.buy ? a.quote.total - b.quote.total : b.quote.total - a.quote.total)[0];
+    .sort((a, b) => model.buy ? a.quote.total - b.quote.total : b.quote.total - a.quote.total);
+  const bestComparisonResult = rankedComparisonResults[0];
+  const counterComparisonResult = rankedComparisonResults[1];
 
   const nudgeComparisonPips = (change: number) => {
     const currentPips = numberFrom(comparisonPipsInput);
@@ -290,6 +292,9 @@ export default function Home() {
             const comparisonDeltaFromBest = Number.isFinite(negotiatedQuote.total) && Number.isFinite(bestComparisonResult?.quote.total)
               ? Math.abs(negotiatedQuote.total - bestComparisonResult!.quote.total)
               : Number.NaN;
+            const comparisonLead = isBestComparison && Number.isFinite(negotiatedQuote.total) && Number.isFinite(counterComparisonResult?.quote.total)
+              ? Math.abs(negotiatedQuote.total - counterComparisonResult!.quote.total)
+              : Number.NaN;
             const tableBuyRate = numberFrom(result.offer.tableBuy);
             const tableSellRate = numberFrom(result.offer.tableSell);
             let tableSkew = "";
@@ -354,7 +359,7 @@ export default function Home() {
                       <div className="quote-amount" data-label="ostateczna kwota">
                         <strong>{money(negotiatedQuote.total)}</strong>
                         <small>{isBestComparison
-                          ? `✓ najlepsza przy ${pips(comparisonPips)}`
+                          ? `✓ najlepsza przy ${pips(comparisonPips)} · ${Number.isFinite(comparisonLead) ? `${money(comparisonLead, 0)} lepsza od kontroferty` : "brak kontroferty"} · ${Number.isFinite(negotiatedDifference) ? `${money(Math.abs(negotiatedDifference), 0)} lepsza od głównej oferty` : "brak porównania z główną ofertą"}`
                           : Number.isFinite(comparisonDeltaFromBest)
                             ? `${model.buy ? "+" : "−"}${money(comparisonDeltaFromBest, 0)} względem najlepszej przy ${pips(comparisonPips)}`
                             : `${money(Math.abs(negotiatedDifference), 0)} ${negotiatedDifference >= 0 ? "lepiej" : "gorzej"} od oferty`}</small>
