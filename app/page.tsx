@@ -6,6 +6,16 @@ const Logo = () => (
   <span className="site-brand-mark" aria-hidden="true"><i /><i /><i /></span>
 );
 
+const AdSlot = ({ placement, size }: { placement: string; size: string }) => (
+  <aside className="ad-slot" aria-label="Miejsce reklamowe" data-ad-placement={placement}>
+    <span className="ad-slot-label">Reklama</span>
+    <div className="ad-slot-preview">
+      <strong>Miejsce na reklamę</strong>
+      <small>{size}</small>
+    </div>
+  </aside>
+);
+
 const ranking = [
   { name: "Platforma P2P", range: "10–40", tone: "green", bar: "p2p" },
   { name: "Kantor internetowy", range: "30–80", tone: "green", bar: "kantor" },
@@ -65,6 +75,8 @@ function KnowledgeBelowCalculator() {
       </header>
 
       <div className="landing-main">
+        <AdSlot placement="after-calculator" size="format responsywny · 970 × 90 / 320 × 100" />
+
         <section className="landing-hero knowledge-intro">
           <p className="landing-kicker">Baza wiedzy pod kalkulatorem</p>
           <h2>Nie porównuj kursów.<br />Porównuj koszt.</h2>
@@ -118,6 +130,8 @@ function KnowledgeBelowCalculator() {
           <a href="#kalkulator">Wylicz moje liczby <span aria-hidden="true">↑</span></a>
         </section>
 
+        <AdSlot placement="before-articles" size="format responsywny · 728 × 90 / 320 × 100" />
+
         <section id="artykuly" className="landing-section articles-section">
           <div className="section-heading">
             <p>Praktyczna wiedza</p>
@@ -132,6 +146,8 @@ function KnowledgeBelowCalculator() {
             ))}
           </div>
         </section>
+
+        <AdSlot placement="after-articles" size="format responsywny · 728 × 90 / 320 × 100" />
 
         <section id="faq" className="landing-section faq-section">
           <div className="section-heading">

@@ -26,6 +26,10 @@ test("server-renders the calculator first and knowledge below on the home page",
   assert.match(html, /Cztery pojęcia i koniec/);
   assert.ok(html.indexOf("Kurs rynkowy") < html.indexOf("Nie porównuj kursów"));
   assert.ok(html.indexOf("Porównanie ofert") < html.indexOf("Artykuły"));
+  assert.equal((html.match(/aria-label="Miejsce reklamowe"/g) ?? []).length, 3);
+  assert.ok(html.indexOf('data-ad-placement="after-calculator"') > html.indexOf("Porównanie ofert"));
+  assert.ok(html.indexOf('data-ad-placement="before-articles"') < html.indexOf("<h2>Artykuły</h2>"));
+  assert.ok(html.indexOf('data-ad-placement="after-articles"') > html.indexOf("<h2>Artykuły</h2>"));
   assert.match(html, /href="#kalkulator"/);
   assert.match(html, /id="ranking"/);
   assert.match(html, /id="faq"/);

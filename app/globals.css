@@ -298,6 +298,12 @@ html { scroll-behavior: smooth; }
 .home-calculator-anchor { scroll-margin-top: 12px; }
 .knowledge-home { border-top: 1px solid oklch(0.87 0.008 250); }
 .knowledge-intro { padding-top: 62px; }
+.ad-slot { min-height: 116px; margin-top: 54px; padding: 9px; display: flex; flex-direction: column; gap: 7px; border: 1px solid oklch(0.87 0.008 250); background: oklch(0.95 0.006 250); }
+.ad-slot-label { color: oklch(0.56 0.011 250); font-size: 9px; font-weight: 700; letter-spacing: .14em; line-height: 1; text-align: center; text-transform: uppercase; }
+.ad-slot-preview { min-height: 82px; padding: 16px; display: flex; align-items: center; justify-content: center; gap: 10px 24px; border: 1px dashed oklch(0.81 0.012 250); background: oklch(0.975 0.004 250); color: oklch(0.5 0.011 250); text-align: center; }
+.ad-slot-preview strong { font-family: "Wix Madefor Display", sans-serif; font-size: 14px; font-weight: 600; }
+.ad-slot-preview small { font-family: "IBM Plex Mono", monospace; font-size: 9px; }
+.ad-slot + .landing-section { padding-top: 58px; }
 .landing-primary { min-height: 52px; margin-top: 30px; padding: 0 24px; display: inline-flex; align-items: center; gap: 24px; border-radius: 3px; background: oklch(0.32 0.028 264); color: white; font-weight: 600; text-decoration: none; }
 .landing-primary:hover { background: oklch(0.25 0.028 264); }
 .landing-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; border: 1px solid oklch(0.89 0.008 250); background: oklch(0.89 0.008 250); }
@@ -386,6 +392,8 @@ html { scroll-behavior: smooth; }
   .landing-stats { grid-template-columns: 1fr; }
   .landing-stats article { min-height: 132px; }
   .landing-section { padding-top: 68px; }
+  .ad-slot { min-height: 126px; margin-top: 44px; }
+  .ad-slot-preview { min-height: 92px; flex-direction: column; gap: 5px; }
   .ranking-row { grid-template-columns: 1fr 68px; gap: 7px 12px; }
   .ranking-track { grid-column: 1 / -1; grid-row: 2; }
   .ranking-value { grid-column: 2; grid-row: 1; }
