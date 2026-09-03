@@ -20,8 +20,7 @@ const CURRENCY_WORDS: Record<Currency, string> = { USD: "dolarów", EUR: "euro",
 
 const INITIAL_OFFERS: Offer[] = [
   { id: "o1", name: "kantor internetowy", rate: "3.7517", commissionPct: "0", fixedFee: "0", transferFee: "0" },
-  { id: "o2", name: "platforma P2P", rate: "3.7450", commissionPct: "0.2", fixedFee: "0", transferFee: "0" },
-  { id: "o3", name: "bank — tabela", rate: "3.7596", commissionPct: "0", fixedFee: "0", transferFee: "250" },
+  { id: "o2", name: "bank — tabela", rate: "3.7596", commissionPct: "0", fixedFee: "0", transferFee: "250" },
 ];
 
 const INITIAL_PRESETS: Preset[] = [

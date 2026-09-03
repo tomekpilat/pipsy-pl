@@ -42,7 +42,7 @@ test("server-renders the pipsy calculator at its own route", async () => {
   assert.match(html, /przelicz ranking/);
   assert.match(html, /Ranking aktualny/);
   assert.match(html, /łącznie/);
-  assert.equal((html.match(/Warianty tej oferty/g) ?? []).length, 3);
+  assert.equal((html.match(/Warianty tej oferty/g) ?? []).length, 2);
   assert.match(html, /obecna oferta/);
   assert.match(html, /ostateczna kwota/);
   assert.match(html, /142 pips(?:<!-- -->)? · (?:<!-- -->)?słaba — negocjuj/);
@@ -52,13 +52,13 @@ test("server-renders the pipsy calculator at its own route", async () => {
   assert.match(html, /374[\s\u00a0]920,00 zł/);
   assert.match(html, /117 pips/);
   assert.equal((html.match(/Wspólna liczba pipsów dla wszystkich ofert/g) ?? []).length, 1);
-  assert.equal((html.match(/Skrypt rozmowy/g) ?? []).length, 3);
-  assert.equal((html.match(/Wybierz 10 pips dla wszystkich ofert/g) ?? []).length, 3);
-  assert.equal((html.match(/Wybierz 25 pips dla wszystkich ofert/g) ?? []).length, 3);
-  assert.equal((html.match(/Wybierz 50 pips dla wszystkich ofert/g) ?? []).length, 3);
+  assert.equal((html.match(/Skrypt rozmowy/g) ?? []).length, 2);
+  assert.equal((html.match(/Wybierz 10 pips dla wszystkich ofert/g) ?? []).length, 2);
+  assert.equal((html.match(/Wybierz 25 pips dla wszystkich ofert/g) ?? []).length, 2);
+  assert.equal((html.match(/Wybierz 50 pips dla wszystkich ofert/g) ?? []).length, 2);
   assert.match(html, /id="script-o1"/);
   assert.match(html, /id="script-o2"/);
-  assert.match(html, /id="script-o3"/);
+  assert.doesNotMatch(html, /id="script-o3"/);
   assert.match(html, /https:\/\/pipsy\.pl\/og-v2\.jpg/);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape|react-loading-skeleton/i);
 });
