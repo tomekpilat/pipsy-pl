@@ -13,16 +13,20 @@ async function render(path = "/") {
   );
 }
 
-test("server-renders the landing page with working destinations", async () => {
+test("server-renders the calculator first and knowledge below on the home page", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
+  assert.match(html, /Kurs rynkowy/);
+  assert.match(html, /Porównanie ofert/);
   assert.match(html, /Nie porównuj kursów/);
   assert.match(html, /Gdzie ile tracisz/);
   assert.match(html, /Cztery pojęcia i koniec/);
-  assert.match(html, /href="\/kalkulator"/);
+  assert.ok(html.indexOf("Kurs rynkowy") < html.indexOf("Nie porównuj kursów"));
+  assert.ok(html.indexOf("Porównanie ofert") < html.indexOf("Artykuły"));
+  assert.match(html, /href="#kalkulator"/);
   assert.match(html, /id="ranking"/);
   assert.match(html, /id="faq"/);
   assert.match(html, /\/og-v2\.jpg/);

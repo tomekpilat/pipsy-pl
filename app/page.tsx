@@ -1,5 +1,7 @@
 "use client";
 
+import Calculator from "./kalkulator/page";
+
 const Logo = () => (
   <span className="site-brand-mark" aria-hidden="true"><i /><i /><i /></span>
 );
@@ -34,10 +36,9 @@ const faqs = [
   ["Czy pobieracie kursy automatycznie?", "Nie. Kurs rynkowy i oferty wpisujesz ręcznie, dzięki czemu dokładnie wiesz, z jakiej chwili i z jakiego źródła pochodzą dane."],
 ] as const;
 
-export default function Home() {
+function KnowledgeBelowCalculator() {
   return (
-    <div className="landing-page">
-      <a className="skip-link" href="#main-content">Przejdź do treści</a>
+    <div className="landing-page knowledge-home">
       <header className="site-header">
         <div className="site-header-inner">
           <a className="site-brand" href="/" aria-label="pipsy.pl — strona główna">
@@ -48,7 +49,7 @@ export default function Home() {
             <a href="#baza">Baza wiedzy</a>
             <a href="#artykuly">Artykuły</a>
             <a href="#faq">FAQ</a>
-            <a className="site-nav-cta" href="/kalkulator">Kalkulator</a>
+            <a className="site-nav-cta" href="#kalkulator">Kalkulator ↑</a>
           </nav>
           <details className="mobile-menu">
             <summary aria-label="Otwórz menu"><span>Menu</span><i aria-hidden="true" /></summary>
@@ -57,18 +58,18 @@ export default function Home() {
               <a href="#baza" onClick={(event) => event.currentTarget.closest("details")?.removeAttribute("open")}>Baza wiedzy</a>
               <a href="#artykuly" onClick={(event) => event.currentTarget.closest("details")?.removeAttribute("open")}>Artykuły</a>
               <a href="#faq" onClick={(event) => event.currentTarget.closest("details")?.removeAttribute("open")}>FAQ</a>
-              <a className="mobile-menu-cta" href="/kalkulator" onClick={(event) => event.currentTarget.closest("details")?.removeAttribute("open")}>Otwórz kalkulator</a>
+              <a className="mobile-menu-cta" href="#kalkulator" onClick={(event) => event.currentTarget.closest("details")?.removeAttribute("open")}>Wróć do kalkulatora</a>
             </nav>
           </details>
         </div>
       </header>
 
-      <main id="main-content" className="landing-main">
-        <section className="landing-hero">
-          <p className="landing-kicker">Koszt wymiany bez domysłów</p>
-          <h1>Nie porównuj kursów.<br />Porównuj koszt.</h1>
+      <div className="landing-main">
+        <section className="landing-hero knowledge-intro">
+          <p className="landing-kicker">Baza wiedzy pod kalkulatorem</p>
+          <h2>Nie porównuj kursów.<br />Porównuj koszt.</h2>
           <p>Kurs, prowizja i opłata SWIFT sprowadzone do jednej liczby w złotych — plus liczba, którą masz powiedzieć dealerowi.</p>
-          <a className="landing-primary" href="/kalkulator">Otwórz kalkulator <span aria-hidden="true">→</span></a>
+          <a className="landing-primary" href="#kalkulator">Wróć do kalkulatora <span aria-hidden="true">↑</span></a>
         </section>
 
         <section className="landing-stats" aria-label="Najważniejsze liczby">
@@ -114,7 +115,7 @@ export default function Home() {
           <div className="conversation-number"><strong>ask</strong><span>podłoga — poniżej dealer zwykle nie zejdzie</span></div>
           <div className="conversation-number highlight"><strong>+40</strong><span>pipsów otwarcia — tę liczbę mówisz na głos</span></div>
           <div className="conversation-number"><strong>+80</strong><span>realny wynik rozmowy przy większym wolumenie</span></div>
-          <a href="/kalkulator">Wylicz moje liczby <span aria-hidden="true">→</span></a>
+          <a href="#kalkulator">Wylicz moje liczby <span aria-hidden="true">↑</span></a>
         </section>
 
         <section id="artykuly" className="landing-section articles-section">
@@ -126,7 +127,7 @@ export default function Home() {
             {articles.map((article, index) => (
               <details className="article-item" key={article.title}>
                 <summary><span className="article-number">0{index + 1}</span><strong>{article.title}</strong><span className="article-time">{article.time}</span><i aria-hidden="true" /></summary>
-                <div><p>{article.text}</p><a href="/kalkulator">Sprawdź na własnych liczbach →</a></div>
+                <div><p>{article.text}</p><a href="#kalkulator">Sprawdź na własnych liczbach ↑</a></div>
               </details>
             ))}
           </div>
@@ -146,17 +147,29 @@ export default function Home() {
 
         <section className="landing-final-cta">
           <div><p>Masz oferty przed sobą?</p><h2>Policz, zanim zadzwonisz.</h2></div>
-          <a href="/kalkulator">Otwórz kalkulator <span aria-hidden="true">→</span></a>
+          <a href="#kalkulator">Wróć do kalkulatora <span aria-hidden="true">↑</span></a>
         </section>
-      </main>
+      </div>
 
       <footer className="site-footer">
         <div>
           <a className="site-brand" href="/" aria-label="pipsy.pl — strona główna"><Logo /><span>pipsy<span>.pl</span></span></a>
-          <nav aria-label="Nawigacja w stopce"><a href="/kalkulator">Kalkulator</a><a href="#ranking">Ranking</a><a href="#baza">Baza wiedzy</a><a href="#artykuly">Artykuły</a><a href="#faq">FAQ</a></nav>
+          <nav aria-label="Nawigacja w stopce"><a href="#kalkulator">Kalkulator</a><a href="#ranking">Ranking</a><a href="#baza">Baza wiedzy</a><a href="#artykuly">Artykuły</a><a href="#faq">FAQ</a></nav>
           <p>Serwis nie świadczy doradztwa inwestycyjnego ani nie prowadzi wymiany walut. Widełki marż są orientacyjne.</p>
         </div>
       </footer>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <>
+      <a className="skip-link" href="#kalkulator">Przejdź do kalkulatora</a>
+      <div id="kalkulator" className="home-calculator-anchor">
+        <Calculator />
+      </div>
+      <KnowledgeBelowCalculator />
+    </>
   );
 }

@@ -284,8 +284,11 @@ html { scroll-behavior: smooth; }
 .landing-main { width: min(1020px, calc(100% - 40px)); margin: 0 auto; padding-bottom: 80px; }
 .landing-hero { padding: 72px 0 54px; }
 .landing-kicker { margin: 0 0 18px; color: oklch(0.48 0.085 264); font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
-.landing-hero h1 { max-width: 800px; margin: 0; font-family: "Wix Madefor Display", sans-serif; font-size: clamp(42px, 7vw, 68px); font-weight: 700; line-height: 1.01; letter-spacing: -.045em; }
+.landing-hero h1, .landing-hero h2 { max-width: 800px; margin: 0; font-family: "Wix Madefor Display", sans-serif; font-size: clamp(42px, 7vw, 68px); font-weight: 700; line-height: 1.01; letter-spacing: -.045em; }
 .landing-hero > p:not(.landing-kicker) { max-width: 590px; margin: 24px 0 0; color: oklch(0.42 0.011 250); font-size: 19px; line-height: 1.65; }
+.home-calculator-anchor { scroll-margin-top: 12px; }
+.knowledge-home { border-top: 1px solid oklch(0.87 0.008 250); }
+.knowledge-intro { padding-top: 62px; }
 .landing-primary { min-height: 52px; margin-top: 30px; padding: 0 24px; display: inline-flex; align-items: center; gap: 24px; border-radius: 3px; background: oklch(0.32 0.028 264); color: white; font-weight: 600; text-decoration: none; }
 .landing-primary:hover { background: oklch(0.25 0.028 264); }
 .landing-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; border: 1px solid oklch(0.89 0.008 250); background: oklch(0.89 0.008 250); }
@@ -393,7 +396,7 @@ html { scroll-behavior: smooth; }
 
 @media (max-width: 430px) {
   .site-header-inner, .landing-main, .site-footer > div { width: calc(100% - 24px); }
-  .landing-hero h1 { font-size: 40px; }
+  .landing-hero h1, .landing-hero h2 { font-size: 40px; }
   .landing-primary { width: 100%; justify-content: space-between; }
   .landing-stats article { padding: 24px 20px; }
   .landing-section { scroll-margin-top: 72px; }
