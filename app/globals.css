@@ -107,7 +107,7 @@ input[type="number"]::-webkit-inner-spin-button { appearance: none; }
 .offer-title-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .offer-name { flex: 1 1 140px; min-width: 100px; padding: 4px 0; border: 0; border-bottom: 1px solid transparent; outline: none; background: transparent; font-size: 16px; font-weight: 600; }
 .offer-name:focus { border-bottom-color: #71819b; }
-.offer-fields { display: grid; grid-template-columns: repeat(6,minmax(70px,1fr)); gap: 8px; }
+.offer-fields { display: grid; grid-template-columns: repeat(5,minmax(70px,1fr)); gap: 8px; }
 .offer-fields label { display: flex; flex-direction: column; gap: 4px; }
 .offer-fields label span { overflow: hidden; color: #7c8188; font-size: 10px; line-height: 1; letter-spacing: .06em; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
 .offer-fields input { width: 100%; padding: 9px 8px; border: 1px solid #dde1e4; border-radius: 3px; outline: none; background: rgba(255,255,255,.7); font-family: "IBM Plex Mono", monospace; font-size: 15px; }

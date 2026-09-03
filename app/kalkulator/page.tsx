@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 
 type Direction = "buy" | "sell";
 type Currency = "USD" | "EUR" | "GBP" | "CHF";
-type Offer = { id: string; name: string; rate: string; commissionPct: string; fixedFee: string; transferFee: string; tableBuy: string; tableSell: string };
+type Offer = { id: string; name: string; commissionPct: string; fixedFee: string; transferFee: string; tableBuy: string; tableSell: string };
 type Preset = Pick<Offer, "id" | "name" | "commissionPct" | "fixedFee" | "transferFee">;
 
 const GRADE_STOPS = [
@@ -19,8 +19,8 @@ const GRADE_STOPS = [
 const CURRENCY_WORDS: Record<Currency, string> = { USD: "dolarów", EUR: "euro", GBP: "funtów", CHF: "franków" };
 
 const INITIAL_OFFERS: Offer[] = [
-  { id: "o1", name: "kantor internetowy", rate: "3.7517", commissionPct: "0", fixedFee: "0", transferFee: "0", tableBuy: "", tableSell: "" },
-  { id: "o2", name: "bank — tabela", rate: "3.7596", commissionPct: "0", fixedFee: "0", transferFee: "250", tableBuy: "", tableSell: "" },
+  { id: "o1", name: "kantor internetowy", commissionPct: "0", fixedFee: "0", transferFee: "0", tableBuy: "3.7233", tableSell: "3.7517" },
+  { id: "o2", name: "bank — tabela", commissionPct: "0", fixedFee: "0", transferFee: "250", tableBuy: "3.7154", tableSell: "3.7596" },
 ];
 
 const INITIAL_PRESETS: Preset[] = [
@@ -81,7 +81,7 @@ export default function Home() {
     const notional = hasMid && hasAmount ? amount * mid : Number.NaN;
 
     const calculated = offers.map((offer) => {
-      const rate = numberFrom(offer.rate);
+      const rate = numberFrom(buy ? offer.tableSell : offer.tableBuy);
       const percentagePoints = numberFrom(offer.commissionPct);
       const pct = (Number.isFinite(percentagePoints) ? percentagePoints : 0) / 100;
       const fixedFee = numberFrom(offer.fixedFee);
@@ -159,7 +159,7 @@ export default function Home() {
 
   const addOffer = (preset?: Preset) => {
     setOffers((current) => [...current, {
-      id: `o${Date.now()}`, name: preset?.name ?? "", rate: "", commissionPct: preset?.commissionPct ?? "",
+      id: `o${Date.now()}`, name: preset?.name ?? "", commissionPct: preset?.commissionPct ?? "",
       fixedFee: preset?.fixedFee ?? "", transferFee: preset?.transferFee ?? "", tableBuy: "", tableSell: "",
     }]);
   };
@@ -332,7 +332,6 @@ export default function Home() {
                   </div>
                 </div>
                 <div className="offer-fields">
-                  <label><span>kurs</span><input inputMode="decimal" value={result.offer.rate} onChange={(event) => updateOffer(result.offer.id, "rate", event.target.value)} /></label>
                   <label><span>prow. %</span><input inputMode="decimal" value={result.offer.commissionPct} onChange={(event) => updateOffer(result.offer.id, "commissionPct", event.target.value)} placeholder="0" /></label>
                   <label><span>prow. zł</span><input inputMode="decimal" value={result.offer.fixedFee} onChange={(event) => updateOffer(result.offer.id, "fixedFee", event.target.value)} placeholder="0" /></label>
                   <label><span>przelew zł</span><input inputMode="decimal" value={result.offer.transferFee} onChange={(event) => updateOffer(result.offer.id, "transferFee", event.target.value)} placeholder="0" /></label>
@@ -373,7 +372,7 @@ export default function Home() {
                     </div>)}
                   </div>
                   <button className="apply-quote-button" type="button" disabled={!result.valid || !Number.isFinite(negotiatedRate) || negotiatedRate <= 0 || Math.abs(negotiatedRate - result.rate) < 0.0000001} onClick={() => {
-                      updateOffer(result.offer.id, "rate", rate4(negotiatedRate));
+                      updateOffer(result.offer.id, model.buy ? "tableSell" : "tableBuy", rate4(negotiatedRate));
                     }}>zapisz wyróżniony kurs jako ofertę</button>
                 </div>
                 <section className="offer-script" aria-labelledby={`script-${result.offer.id}`}>
