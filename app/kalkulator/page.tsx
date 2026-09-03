@@ -339,7 +339,7 @@ export default function Home() {
                     </div>
                     {variantQuotes.map((variant) => <div className={`quote-row quote-row-calculated ${comparisonPips === variant.pips ? "active" : ""}`} key={variant.pips}>
                       <div data-label="kurs"><small>wariant {variant.pips} pips</small><strong>{rate4(variant.rate)}</strong></div>
-                      <div data-label="zmiana"><button className="quote-variant-button" type="button" aria-label={`Wybierz ${variant.pips} pips dla wszystkich ofert`} disabled={!result.valid} onClick={() => { setComparisonPipsInput(`${variant.pips}`); setCopiedScriptId(""); }}>{model.buy ? "−" : "+"}{pips(variant.pips)}</button></div>
+                      <div data-label="zmiana"><strong className="quote-change">{model.buy ? "−" : "+"}{pips(variant.pips)}</strong></div>
                       <div data-label="pipsy efektywnie"><strong>{pips(variant.quote.effectivePips)}</strong></div>
                       <div className="quote-amount" data-label="ostateczna kwota"><strong>{money(variant.quote.total)}</strong><small>{money(variant.difference, 0)} lepiej od oferty</small></div>
                     </div>)}

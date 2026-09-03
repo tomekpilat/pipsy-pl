@@ -57,9 +57,8 @@ test("server-renders the pipsy calculator at its own route", async () => {
   assert.match(html, /117 pips/);
   assert.equal((html.match(/Wspólna liczba pipsów dla wszystkich ofert/g) ?? []).length, 1);
   assert.equal((html.match(/Skrypt rozmowy/g) ?? []).length, 2);
-  assert.equal((html.match(/Wybierz 10 pips dla wszystkich ofert/g) ?? []).length, 2);
-  assert.equal((html.match(/Wybierz 25 pips dla wszystkich ofert/g) ?? []).length, 2);
-  assert.equal((html.match(/Wybierz 50 pips dla wszystkich ofert/g) ?? []).length, 2);
+  assert.equal((html.match(/quote-change/g) ?? []).length, 6);
+  assert.doesNotMatch(html, /Wybierz (?:10|25|50) pips dla wszystkich ofert/);
   assert.match(html, /id="script-o1"/);
   assert.match(html, /id="script-o2"/);
   assert.doesNotMatch(html, /id="script-o3"/);
