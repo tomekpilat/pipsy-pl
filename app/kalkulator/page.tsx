@@ -265,6 +265,18 @@ export default function Home() {
           <p>{model.buy ? "Odejmujemy od kursu każdej oferty." : "Dodajemy do kursu każdej oferty."} Wyniki i skrypty aktualizują się razem.</p>
         </section>
 
+        <section className="negotiation negotiation-argument">
+          <div>
+            <p className="eyebrow light">Dodatkowy argument do rozmowy</p>
+            <p className="negotiation-context">Każda oferta ma własny skrypt bezpośrednio pod wyliczeniem. Tutaj możesz dodatkowo sprawdzić asymetrię tabeli bankowej.</p>
+          </div>
+          <div className="table-skew">
+            <label><span>kurs kupna banku</span><input inputMode="decimal" value={tableBuy} onChange={(event) => setTableBuy(event.target.value)} placeholder="—" /></label>
+            <label><span>kurs sprzedaży banku</span><input inputMode="decimal" value={tableSell} onChange={(event) => setTableSell(event.target.value)} placeholder="—" /></label>
+            <p>{tableSkew || "Wpisz oba kursy z tabeli — pokażemy, czy środek jest przesunięty przeciw Tobie."}</p>
+          </div>
+        </section>
+
         {!model.hasMid && <p className="empty-note">Wpisz kurs rynkowy w panelu u góry — bez niego nie ma do czego porównywać.</p>}
 
         <section className={`offer-list ${!model.hasMid ? "muted" : ""}`} aria-label="Porównanie ofert">
@@ -360,18 +372,6 @@ export default function Home() {
 
         {validCount === 1 && <p className="hint-line">Jedna oferta to jeszcze nie ranking — dodaj drugą, żeby zobaczyć różnicę w złotówkach.</p>}
         {nearTie && <p className="hint-line">Praktycznie remis — różnica poniżej 20 zł. Wybierz wygodniejszą opcję.</p>}
-
-        <section className="negotiation negotiation-argument">
-          <div>
-            <p className="eyebrow light">Dodatkowy argument do rozmowy</p>
-            <p className="negotiation-context">Każda oferta ma teraz własny skrypt bezpośrednio pod wyliczeniem. Tu możesz dodatkowo sprawdzić asymetrię tabeli bankowej.</p>
-          </div>
-          <div className="table-skew">
-            <label><span>kurs kupna banku</span><input inputMode="decimal" value={tableBuy} onChange={(event) => setTableBuy(event.target.value)} placeholder="—" /></label>
-            <label><span>kurs sprzedaży banku</span><input inputMode="decimal" value={tableSell} onChange={(event) => setTableSell(event.target.value)} placeholder="—" /></label>
-            <p>{tableSkew || "Wpisz oba kursy z tabeli — pokażemy, czy środek jest przesunięty przeciw Tobie."}</p>
-          </div>
-        </section>
 
         <footer className="app-footer">
           <div>{presets.length ? `Zapisane profile: ${presets.length}` : "Brak zapisanych profili"} {presets.length > 0 && <button type="button" onClick={clearPresets}>wyczyść</button>}</div>
