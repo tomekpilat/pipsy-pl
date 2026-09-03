@@ -134,6 +134,15 @@ export default function Home() {
 
   const comparisonPipsValue = numberFrom(comparisonPipsInput);
   const comparisonPips = Number.isFinite(comparisonPipsValue) ? Math.max(0, comparisonPipsValue) : Number.NaN;
+  const comparisonResults = displayedResults.map((result) => {
+    const rate = result.valid && Number.isFinite(comparisonPips)
+      ? result.rate + (model.buy ? -1 : 1) * comparisonPips / 10_000
+      : Number.NaN;
+    return { offerId: result.offer.id, quote: offerQuoteAtRate(result.offer, rate) };
+  });
+  const bestComparisonResult = comparisonResults
+    .filter((result) => Number.isFinite(result.quote.total))
+    .sort((a, b) => model.buy ? a.quote.total - b.quote.total : b.quote.total - a.quote.total)[0];
 
   const nudgeComparisonPips = (change: number) => {
     const currentPips = numberFrom(comparisonPipsInput);
@@ -301,6 +310,10 @@ export default function Home() {
             });
             const comparisonVariantVisible = Number.isFinite(comparisonPips) && comparisonPips > 0;
             const otherVariantQuotes = variantQuotes.filter((variant) => variant.pips !== comparisonPips);
+            const isBestComparison = comparisonVariantVisible && result.offer.id === bestComparisonResult?.offerId;
+            const comparisonDeltaFromBest = Number.isFinite(negotiatedQuote.total) && Number.isFinite(bestComparisonResult?.quote.total)
+              ? Math.abs(negotiatedQuote.total - bestComparisonResult!.quote.total)
+              : Number.NaN;
             const offerScript = result.valid && Number.isFinite(negotiatedRate)
               ? `${model.buy ? "Mam do kupienia" : "Mam do sprzedania"} ${model.amount.toLocaleString("pl-PL")} ${CURRENCY_WORDS[currency]}, transakcja dziś. Rynek jest na ${spokenRate(model.mid)}, a Państwa kurs to ${spokenRate(result.rate)} — ${Math.round(result.effectivePips)} pipsów efektywnie. Proszę o ${spokenRate(negotiatedRate)}, czyli poprawę o ${Math.round(comparisonPips)} pipsów. Po prowizjach daje to ${Math.round(negotiatedQuote.effectivePips)} pipsów i ${money(negotiatedQuote.total, 0)} łącznie.`
               : "Uzupełnij kurs oferty, aby otrzymać gotowy skrypt rozmowy.";
@@ -328,7 +341,7 @@ export default function Home() {
                 </div>
                 <div className="offer-scenario">
                   <div className="scenario-heading">
-                    <div><span>Warianty tej oferty</span><small>Wybrany wariant {pips(comparisonPips)} jest podświetlony we wszystkich ofertach.</small></div>
+                    <div><span>Warianty tej oferty</span><small>Wybrany wariant {pips(comparisonPips)} jest porównywany między wszystkimi ofertami.</small></div>
                   </div>
                   <div className="quote-table" aria-label={`Kursy i kwoty dla ${result.offer.name || "oferty"}`}>
                     <div className="quote-table-head" aria-hidden="true"><span>kurs</span><span>zmiana</span><span>pipsy efektywnie</span><span>ostateczna kwota</span></div>
@@ -338,11 +351,19 @@ export default function Home() {
                       <div data-label="pipsy efektywnie"><span className={`quote-grade grade-${grade?.tone ?? "neutral"}`}>{result.valid ? `${Math.round(result.effectivePips)} pips · ${grade?.label}` : "— · brak oceny"}</span></div>
                       <div className="quote-amount" data-label="ostateczna kwota"><strong>{result.valid ? money(result.total) : "—"}</strong><small>{!result.valid ? "wpisz kurs" : isBest ? (model.buy ? "najniższy koszt" : "najwyższy przychód") : Number.isFinite(deltaFromBest) ? `${model.buy ? "+" : "−"}${money(deltaFromBest, 0)} względem najlepszej oferty` : "brak porównania"}</small></div>
                     </div>
-                    {comparisonVariantVisible && <div className="quote-row quote-row-calculated active">
+                    {comparisonVariantVisible && <div className={`quote-row quote-row-calculated active ${isBestComparison ? "quote-row-comparison-best" : ""}`}>
                       <div data-label="kurs"><small>wspólny wariant</small><strong>{rate4(negotiatedRate)}</strong></div>
                       <div data-label="zmiana"><strong className="quote-change">{model.buy ? "−" : "+"}{pips(comparisonPips)}</strong></div>
                       <div data-label="pipsy efektywnie"><strong>{pips(negotiatedQuote.effectivePips)}</strong></div>
-                      <div className="quote-amount" data-label="ostateczna kwota"><strong>{money(negotiatedQuote.total)}</strong><small>{money(Math.abs(negotiatedDifference), 0)} {negotiatedDifference >= 0 ? "lepiej" : "gorzej"} od oferty</small></div>
+                      <div className="quote-amount" data-label="ostateczna kwota">
+                        {isBestComparison && <span className="comparison-winner-badge">✓ najlepsza przy {pips(comparisonPips)}</span>}
+                        <strong>{money(negotiatedQuote.total)}</strong>
+                        <small>{isBestComparison
+                          ? `${model.buy ? "najniższa kwota" : "najwyższa kwota"} dla wspólnego wariantu`
+                          : Number.isFinite(comparisonDeltaFromBest)
+                            ? `${model.buy ? "+" : "−"}${money(comparisonDeltaFromBest, 0)} względem najlepszej przy ${pips(comparisonPips)}`
+                            : `${money(Math.abs(negotiatedDifference), 0)} ${negotiatedDifference >= 0 ? "lepiej" : "gorzej"} od oferty`}</small>
+                      </div>
                     </div>}
                     {otherVariantQuotes.map((variant) => <div className="quote-row quote-row-calculated" key={variant.pips}>
                       <div data-label="kurs"><small>wariant {variant.pips} pips</small><strong>{rate4(variant.rate)}</strong></div>
