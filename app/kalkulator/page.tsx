@@ -254,20 +254,6 @@ export default function Home() {
           <p className="transaction-detail">wartość <strong>{money(model.notional, 0)}</strong> · ruch 25 pips <strong>{money(25 * model.pipValue, 0)}</strong></p>
         </section>
 
-        <section className="global-pips-panel" aria-labelledby="global-pips-title">
-          <p className="eyebrow" id="global-pips-title">Wspólny wariant negocjacji</p>
-          <div className="scenario-pips-input global-pips-input">
-            <button type="button" aria-label="Odejmij 1 pips we wszystkich ofertach" disabled={!Number.isFinite(comparisonPips) || comparisonPips <= 0} onClick={() => nudgeComparisonPips(-1)}>−</button>
-            <input aria-label="Wspólna liczba pipsów dla wszystkich ofert" inputMode="decimal" value={comparisonPipsInput} onChange={(event) => { setComparisonPipsInput(event.target.value); setCopiedScriptId(""); }} />
-            <em>pips</em>
-            <button type="button" aria-label="Dodaj 1 pips we wszystkich ofertach" onClick={() => nudgeComparisonPips(1)}>+</button>
-          </div>
-          <div className="global-pips-presets" aria-label="Szybki wybór pipsów">
-            {[10, 25, 50].map((value) => <button className={comparisonPips === value ? "active" : ""} type="button" key={value} onClick={() => { setComparisonPipsInput(`${value}`); setCopiedScriptId(""); }}>{value}</button>)}
-          </div>
-          <p>{model.buy ? "Odejmujemy od kursu każdej oferty." : "Dodajemy do kursu każdej oferty."} Wyniki i skrypty aktualizują się razem.</p>
-        </section>
-
         {model.ageLevel !== "fresh" && model.hasMid && <div className={`age-message ${model.ageLevel}`}>
           {model.ageLevel === "critical" ? "Kurs ma ponad pół godziny. Odśwież go — na starych danych ten kalkulator daje fałszywą pewność." : `Kurs sprzed ${model.ageMinutes} min. Zerknij jeszcze raz przed telefonem.`}
         </div>}
@@ -286,6 +272,20 @@ export default function Home() {
             <button className={`rank-button ${rankingDirty ? "pending" : ""}`} type="button" onClick={commitRanking}>przelicz ranking</button>
           </div>
         </header>
+
+        <section className="global-pips-panel offers-pips-panel" aria-labelledby="global-pips-title">
+          <p className="eyebrow" id="global-pips-title">Wspólny wariant negocjacji</p>
+          <div className="scenario-pips-input global-pips-input">
+            <button type="button" aria-label="Odejmij 1 pips we wszystkich ofertach" disabled={!Number.isFinite(comparisonPips) || comparisonPips <= 0} onClick={() => nudgeComparisonPips(-1)}>−</button>
+            <input aria-label="Wspólna liczba pipsów dla wszystkich ofert" inputMode="decimal" value={comparisonPipsInput} onChange={(event) => { setComparisonPipsInput(event.target.value); setCopiedScriptId(""); }} />
+            <em>pips</em>
+            <button type="button" aria-label="Dodaj 1 pips we wszystkich ofertach" onClick={() => nudgeComparisonPips(1)}>+</button>
+          </div>
+          <div className="global-pips-presets" aria-label="Szybki wybór pipsów">
+            {[10, 25, 50].map((value) => <button className={comparisonPips === value ? "active" : ""} type="button" key={value} onClick={() => { setComparisonPipsInput(`${value}`); setCopiedScriptId(""); }}>{value}</button>)}
+          </div>
+          <p>{model.buy ? "Odejmujemy od kursu każdej oferty." : "Dodajemy do kursu każdej oferty."} Wyniki i skrypty aktualizują się razem.</p>
+        </section>
 
         <p className={`ranking-status ${rankingDirty ? "pending" : ""}`} role="status">
           {rankingDirty ? "Dane zmienione — kolejność i zwycięzca pozostają bez zmian do przeliczenia rankingu." : "Ranking aktualny — pipsy i kwoty policzone dla bieżących danych."}

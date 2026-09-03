@@ -38,6 +38,8 @@ test("server-renders the pipsy calculator at its own route", async () => {
   assert.match(html, /Kurs rynkowy/);
   assert.match(html, /Porównanie ofert/);
   assert.match(html, /Wspólny wariant negocjacji/);
+  assert.ok(html.indexOf("Oferty") < html.indexOf("Wspólny wariant negocjacji"));
+  assert.ok(html.indexOf("Wspólny wariant negocjacji") < html.indexOf("Porównanie ofert"));
   assert.match(html, /375[\s\u00a0]170,00 zł/);
   assert.match(html, /przelicz ranking/);
   assert.match(html, /Ranking aktualny/);
