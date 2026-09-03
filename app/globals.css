@@ -130,7 +130,7 @@ input[type="number"]::-webkit-inner-spin-button { appearance: none; }
 .quote-row { min-height: 74px; padding: 11px 12px; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); align-items: start; gap: 12px 14px; border-top: 1px solid #e2e5e8; background: #fff; }
 .quote-row-current { border-top: 0; background: #fafbfb; }
 .quote-row-calculated { background: #f6f8fb; }
-.quote-row-calculated.active { position: relative; background: #fff9e4; box-shadow: inset 3px 0 0 #d1ad39; }
+.quote-row.active { position: relative; background: #fff9e4; box-shadow: inset 3px 0 0 #d1ad39; }
 .quote-row > div { min-width: 0; }
 .quote-row > div::before { content: attr(data-label); display: block; margin-bottom: 4px; color: #8a9097; font-size: 8px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
 .quote-row small { display: block; color: #7b828b; font-size: 9px; line-height: 1.4; }
@@ -140,6 +140,8 @@ input[type="number"]::-webkit-inner-spin-button { appearance: none; }
 .quote-amount strong { color: #222a34 !important; font-size: 25px !important; font-weight: 500 !important; line-height: 1.1 !important; letter-spacing: -.035em; font-variant-numeric: tabular-nums; }
 .quote-row-calculated .quote-amount strong { color: #475873 !important; }
 .quote-amount small { margin-top: 3px; font-size: 10px; }
+.quote-variant-button { min-height: 36px; padding: 7px 9px; border: 1px solid #cfd5dc; border-radius: 3px; background: #fff; color: #4c5663; font-family: "IBM Plex Mono", monospace; font-size: 12px; font-weight: 600; }
+.quote-variant-button:hover { border-color: #9fa9b6; }
 .apply-quote-button { width: 100%; min-height: 40px; padding: 10px 13px; border: 0; border-radius: 3px; background: #4b5668; color: #fff; font-size: 10px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; }
 .apply-quote-button:hover { background: #343b49; }
 .offer-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; color: #757b82; font-size: 11px; line-height: 1.6; }
@@ -203,7 +205,7 @@ input[type="number"]::-webkit-inner-spin-button { appearance: none; }
   .control-panel { padding: 18px 16px; grid-template-columns: 1fr; gap: 16px; }
   .workspace { padding: 18px 12px 36px; gap: 16px; }
   .brand { margin-bottom: 2px; }
-  .subtle-button, .header-actions select, .primary-button, .rank-button, .offer-actions button, .offer-script-heading button, .app-footer button { min-height: 44px; }
+  .subtle-button, .header-actions select, .primary-button, .rank-button, .offer-actions button, .quote-variant-button, .offer-script-heading button, .app-footer button { min-height: 44px; }
   .amount-row input, .amount-row select, .spread-control input, .offer-fields input, .global-pips-input input, .header-actions select, .table-skew input { font-size: 16px; }
   .offers-header { align-items: stretch; }
   .header-actions { width: 100%; }

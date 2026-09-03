@@ -307,6 +307,15 @@ export default function Home() {
             const negotiatedDifference = result.valid && Number.isFinite(negotiatedQuote.total)
               ? (model.buy ? result.total - negotiatedQuote.total : negotiatedQuote.total - result.total)
               : Number.NaN;
+            const variantQuotes = [10, 25, 50].map((variantPips) => {
+              const variantRate = result.valid ? result.rate + (model.buy ? -1 : 1) * variantPips / 10_000 : Number.NaN;
+              const quote = offerQuoteAtRate(result.offer, variantRate);
+              const difference = result.valid && Number.isFinite(quote.total)
+                ? Math.abs(quote.total - result.total)
+                : Number.NaN;
+              return { pips: variantPips, rate: variantRate, quote, difference };
+            });
+            const customVariantVisible = Number.isFinite(comparisonPips) && comparisonPips > 0 && !variantQuotes.some((variant) => variant.pips === comparisonPips);
             const offerScript = result.valid && Number.isFinite(negotiatedRate)
               ? `${model.buy ? "Mam do kupienia" : "Mam do sprzedania"} ${model.amount.toLocaleString("pl-PL")} ${CURRENCY_WORDS[currency]}, transakcja dziś. Rynek jest na ${spokenRate(model.mid)}, a Państwa kurs to ${spokenRate(result.rate)} — ${Math.round(result.effectivePips)} pipsów efektywnie. Proszę o ${spokenRate(negotiatedRate)}, czyli poprawę o ${Math.round(comparisonPips)} pipsów. Po prowizjach daje to ${Math.round(negotiatedQuote.effectivePips)} pipsów i ${money(negotiatedQuote.total, 0)} łącznie.`
               : "Uzupełnij kurs oferty, aby otrzymać gotowy skrypt rozmowy.";
@@ -335,22 +344,28 @@ export default function Home() {
                 </div>
                 <div className="offer-scenario">
                   <div className="scenario-heading">
-                    <div><span>Porównanie przy {pips(comparisonPips)} zmiany</span><small>Wspólna wartość z panelu u góry.</small></div>
+                    <div><span>Warianty tej oferty</span><small>Wybrany wariant {pips(comparisonPips)} jest podświetlony we wszystkich ofertach.</small></div>
                   </div>
                   <div className="quote-table" aria-label={`Kursy i kwoty dla ${result.offer.name || "oferty"}`}>
                     <div className="quote-table-head" aria-hidden="true"><span>kurs</span><span>zmiana</span><span>pipsy efektywnie</span><span>ostateczna kwota</span></div>
-                    <div className="quote-row quote-row-current">
+                    <div className={`quote-row quote-row-current ${comparisonPips === 0 ? "active" : ""}`}>
                       <div data-label="kurs"><small>obecna oferta</small><strong>{result.valid ? rate4(result.rate) : "—"}</strong></div>
                       <div data-label="zmiana"><strong>0 pips</strong></div>
                       <div data-label="pipsy efektywnie"><span className={`quote-grade grade-${grade?.tone ?? "neutral"}`}>{result.valid ? `${Math.round(result.effectivePips)} pips · ${grade?.label}` : "— · brak oceny"}</span></div>
                       <div className="quote-amount" data-label="ostateczna kwota"><strong>{result.valid ? money(result.total) : "—"}</strong><small>{!result.valid ? "wpisz kurs" : isLeader ? (model.buy ? "najniższy koszt" : "najwyższy przychód") : Number.isFinite(delta) ? `${model.buy ? "+" : "−"}${money(delta, 0)} względem lidera` : "przelicz ranking"}</small></div>
                     </div>
-                    <div className="quote-row quote-row-calculated active">
-                      <div data-label="kurs"><small>wariant negocjacji</small><strong>{rate4(negotiatedRate)}</strong></div>
+                    {variantQuotes.map((variant) => <div className={`quote-row quote-row-calculated ${comparisonPips === variant.pips ? "active" : ""}`} key={variant.pips}>
+                      <div data-label="kurs"><small>wariant {variant.pips} pips</small><strong>{rate4(variant.rate)}</strong></div>
+                      <div data-label="zmiana"><button className="quote-variant-button" type="button" aria-label={`Wybierz ${variant.pips} pips dla wszystkich ofert`} disabled={!result.valid} onClick={() => { setComparisonPipsInput(`${variant.pips}`); setCopiedScriptId(""); }}>{model.buy ? "−" : "+"}{pips(variant.pips)}</button></div>
+                      <div data-label="pipsy efektywnie"><strong>{pips(variant.quote.effectivePips)}</strong></div>
+                      <div className="quote-amount" data-label="ostateczna kwota"><strong>{money(variant.quote.total)}</strong><small>{money(variant.difference, 0)} lepiej od oferty</small></div>
+                    </div>)}
+                    {customVariantVisible && <div className="quote-row quote-row-calculated active">
+                      <div data-label="kurs"><small>wspólny wariant</small><strong>{rate4(negotiatedRate)}</strong></div>
                       <div data-label="zmiana"><strong>{model.buy ? "−" : "+"}{pips(comparisonPips)}</strong></div>
                       <div data-label="pipsy efektywnie"><strong>{pips(negotiatedQuote.effectivePips)}</strong></div>
                       <div className="quote-amount" data-label="ostateczna kwota"><strong>{money(negotiatedQuote.total)}</strong><small>{money(Math.abs(negotiatedDifference), 0)} {negotiatedDifference >= 0 ? "lepiej" : "gorzej"} od oferty</small></div>
-                    </div>
+                    </div>}
                   </div>
                   <button className="apply-quote-button" type="button" disabled={!result.valid || !Number.isFinite(negotiatedRate) || negotiatedRate <= 0 || Math.abs(negotiatedRate - result.rate) < 0.0000001} onClick={() => {
                       updateOffer(result.offer.id, "rate", rate4(negotiatedRate));
