@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 
 type Direction = "buy" | "sell";
 type Currency = "USD" | "EUR" | "GBP" | "CHF";
-type Offer = { id: string; name: string; rate: string; commissionPct: string; fixedFee: string; transferFee: string };
-type Preset = Omit<Offer, "rate">;
+type Offer = { id: string; name: string; rate: string; commissionPct: string; fixedFee: string; transferFee: string; tableBuy: string; tableSell: string };
+type Preset = Pick<Offer, "id" | "name" | "commissionPct" | "fixedFee" | "transferFee">;
 
 const GRADE_STOPS = [
   { max: 50, label: "bardzo dobra", tone: "green" },
@@ -19,8 +19,8 @@ const GRADE_STOPS = [
 const CURRENCY_WORDS: Record<Currency, string> = { USD: "dolarów", EUR: "euro", GBP: "funtów", CHF: "franków" };
 
 const INITIAL_OFFERS: Offer[] = [
-  { id: "o1", name: "kantor internetowy", rate: "3.7517", commissionPct: "0", fixedFee: "0", transferFee: "0" },
-  { id: "o2", name: "bank — tabela", rate: "3.7596", commissionPct: "0", fixedFee: "0", transferFee: "250" },
+  { id: "o1", name: "kantor internetowy", rate: "3.7517", commissionPct: "0", fixedFee: "0", transferFee: "0", tableBuy: "", tableSell: "" },
+  { id: "o2", name: "bank — tabela", rate: "3.7596", commissionPct: "0", fixedFee: "0", transferFee: "250", tableBuy: "", tableSell: "" },
 ];
 
 const INITIAL_PRESETS: Preset[] = [
@@ -51,8 +51,6 @@ export default function Home() {
   const [currency, setCurrency] = useState<Currency>("USD");
   const [offers, setOffers] = useState<Offer[]>(INITIAL_OFFERS);
   const [presets, setPresets] = useState<Preset[]>(INITIAL_PRESETS);
-  const [tableBuy, setTableBuy] = useState("");
-  const [tableSell, setTableSell] = useState("");
   const [copiedScriptId, setCopiedScriptId] = useState("");
   const [savedId, setSavedId] = useState("");
   const [comparisonPipsInput, setComparisonPipsInput] = useState("25");
@@ -151,16 +149,6 @@ export default function Home() {
     setCopiedScriptId("");
   };
 
-  const tableSkew = useMemo(() => {
-    const buyRate = numberFrom(tableBuy);
-    const sellRate = numberFrom(tableSell);
-    if (!model.hasMid || !Number.isFinite(buyRate) || !Number.isFinite(sellRate)) return "";
-    const skew = ((buyRate + sellRate) / 2 - model.mid) * 10_000;
-    if (model.buy && skew > 10) return `Środek tabeli jest ${Math.round(skew)} pipsów nad rynkiem — tabela jest przesunięta przeciw kupującym. Powiedz to na głos.`;
-    if (!model.buy && skew < -10) return `Środek tabeli jest ${Math.round(-skew)} pipsów pod rynkiem — przesunięcie działa przeciw sprzedającym. Warto o tym wspomnieć.`;
-    return `Tabela jest symetryczna wobec rynku (${Math.round(skew)} pipsów) — tu argumentu nie ma.`;
-  }, [tableBuy, tableSell, model.hasMid, model.mid, model.buy]);
-
   const updateOffer = (id: string, field: keyof Omit<Offer, "id">, value: string) => {
     setOffers((current) => current.map((offer) => offer.id === id ? { ...offer, [field]: value } : offer));
     setSavedId("");
@@ -170,7 +158,7 @@ export default function Home() {
   const addOffer = (preset?: Preset) => {
     setOffers((current) => [...current, {
       id: `o${Date.now()}`, name: preset?.name ?? "", rate: "", commissionPct: preset?.commissionPct ?? "",
-      fixedFee: preset?.fixedFee ?? "", transferFee: preset?.transferFee ?? "",
+      fixedFee: preset?.fixedFee ?? "", transferFee: preset?.transferFee ?? "", tableBuy: "", tableSell: "",
     }]);
   };
 
@@ -274,18 +262,6 @@ export default function Home() {
           <p>{model.buy ? "Odejmujemy od kursu każdej oferty." : "Dodajemy do kursu każdej oferty."} Wyniki i skrypty aktualizują się razem.</p>
         </section>
 
-        <section className="negotiation negotiation-argument">
-          <div>
-            <p className="eyebrow light">Dodatkowy argument do rozmowy</p>
-            <p className="negotiation-context">Każda oferta ma własny skrypt bezpośrednio pod wyliczeniem. Tutaj możesz dodatkowo sprawdzić asymetrię tabeli bankowej.</p>
-          </div>
-          <div className="table-skew">
-            <label><span>kurs kupna banku</span><input inputMode="decimal" value={tableBuy} onChange={(event) => setTableBuy(event.target.value)} placeholder="—" /></label>
-            <label><span>kurs sprzedaży banku</span><input inputMode="decimal" value={tableSell} onChange={(event) => setTableSell(event.target.value)} placeholder="—" /></label>
-            <p>{tableSkew || "Wpisz oba kursy z tabeli — pokażemy, czy środek jest przesunięty przeciw Tobie."}</p>
-          </div>
-        </section>
-
         {!model.hasMid && <p className="empty-note">Wpisz kurs rynkowy w panelu u góry — bez niego nie ma do czego porównywać.</p>}
 
         <section className={`offer-list ${!model.hasMid ? "muted" : ""}`} aria-label="Porównanie ofert">
@@ -314,9 +290,26 @@ export default function Home() {
             const comparisonDeltaFromBest = Number.isFinite(negotiatedQuote.total) && Number.isFinite(bestComparisonResult?.quote.total)
               ? Math.abs(negotiatedQuote.total - bestComparisonResult!.quote.total)
               : Number.NaN;
-            const offerScript = result.valid && Number.isFinite(negotiatedRate)
+            const tableBuyRate = numberFrom(result.offer.tableBuy);
+            const tableSellRate = numberFrom(result.offer.tableSell);
+            let tableSkew = "";
+            let tableSkewScript = "";
+            if (model.hasMid && Number.isFinite(tableBuyRate) && Number.isFinite(tableSellRate)) {
+              const skew = ((tableBuyRate + tableSellRate) / 2 - model.mid) * 10_000;
+              if (model.buy && skew > 10) {
+                tableSkew = `Środek tej tabeli jest ${Math.round(skew)} pipsów nad rynkiem — oferta jest przesunięta przeciw kupującym.`;
+                tableSkewScript = `Środek Państwa tabeli jest ${Math.round(skew)} pipsów nad rynkiem, więc tabela jest przesunięta na moją niekorzyść.`;
+              } else if (!model.buy && skew < -10) {
+                tableSkew = `Środek tej tabeli jest ${Math.round(-skew)} pipsów pod rynkiem — oferta jest przesunięta przeciw sprzedającym.`;
+                tableSkewScript = `Środek Państwa tabeli jest ${Math.round(-skew)} pipsów pod rynkiem, więc tabela jest przesunięta na moją niekorzyść.`;
+              } else {
+                tableSkew = `Tabela tej oferty jest symetryczna wobec rynku (${Math.round(skew)} pipsów) — tu dodatkowego argumentu nie ma.`;
+              }
+            }
+            const baseOfferScript = result.valid && Number.isFinite(negotiatedRate)
               ? `${model.buy ? "Mam do kupienia" : "Mam do sprzedania"} ${model.amount.toLocaleString("pl-PL")} ${CURRENCY_WORDS[currency]}, transakcja dziś. Rynek jest na ${spokenRate(model.mid)}, a Państwa kurs to ${spokenRate(result.rate)} — ${Math.round(result.effectivePips)} pipsów efektywnie. Proszę o ${spokenRate(negotiatedRate)}, czyli poprawę o ${Math.round(comparisonPips)} pipsów. Po prowizjach daje to ${Math.round(negotiatedQuote.effectivePips)} pipsów i ${money(negotiatedQuote.total, 0)} łącznie.`
               : "Uzupełnij kurs oferty, aby otrzymać gotowy skrypt rozmowy.";
+            const offerScript = tableSkewScript ? `${baseOfferScript} ${tableSkewScript}` : baseOfferScript;
             let warning = "";
             if (result.valid && model.buy && result.rate < model.ask) warning = "Kurs poniżej rynkowego — sprawdź, czy to na pewno kurs sprzedaży waluty przez tę instytucję.";
             else if (result.valid && !model.buy && result.rate > model.bid) warning = "Kurs powyżej rynkowego — sprawdź, czy to kurs, po którym instytucja kupuje walutę od ciebie.";
@@ -339,6 +332,17 @@ export default function Home() {
                   <label><span>prow. zł</span><input inputMode="decimal" value={result.offer.fixedFee} onChange={(event) => updateOffer(result.offer.id, "fixedFee", event.target.value)} placeholder="0" /></label>
                   <label><span>przelew zł</span><input inputMode="decimal" value={result.offer.transferFee} onChange={(event) => updateOffer(result.offer.id, "transferFee", event.target.value)} placeholder="0" /></label>
                 </div>
+                <section className="offer-skew-panel" aria-labelledby={`skew-${result.offer.id}`}>
+                  <div className="offer-skew-heading">
+                    <span>Dodatkowy argument do rozmowy</span>
+                    <strong id={`skew-${result.offer.id}`}>{result.offer.name || "oferta bez nazwy"}</strong>
+                  </div>
+                  <div className="offer-skew-fields">
+                    <label><span>kurs kupna</span><input id={`table-buy-${result.offer.id}`} aria-label={`Kurs kupna — ${result.offer.name || "oferta bez nazwy"}`} inputMode="decimal" value={result.offer.tableBuy} onChange={(event) => updateOffer(result.offer.id, "tableBuy", event.target.value)} placeholder="—" /></label>
+                    <label><span>kurs sprzedaży</span><input id={`table-sell-${result.offer.id}`} aria-label={`Kurs sprzedaży — ${result.offer.name || "oferta bez nazwy"}`} inputMode="decimal" value={result.offer.tableSell} onChange={(event) => updateOffer(result.offer.id, "tableSell", event.target.value)} placeholder="—" /></label>
+                  </div>
+                  <p>{tableSkew || "Wpisz kurs kupna i sprzedaży tej oferty — pokażemy, czy jej tabela jest przesunięta przeciw Tobie."}</p>
+                </section>
                 <div className="offer-scenario">
                   <div className="scenario-heading">
                     <div><span>Warianty tej oferty</span><small>Wybrany wariant {pips(comparisonPips)} jest porównywany między wszystkimi ofertami.</small></div>

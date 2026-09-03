@@ -44,7 +44,13 @@ test("server-renders the pipsy calculator at its own route", async () => {
   assert.match(html, /Wspólny wariant negocjacji/);
   assert.ok(html.indexOf("Oferty") < html.indexOf("Wspólny wariant negocjacji"));
   assert.ok(html.indexOf("Wspólny wariant negocjacji") < html.indexOf("Porównanie ofert"));
-  assert.ok(html.indexOf("Dodatkowy argument do rozmowy") < html.indexOf("Porównanie ofert"));
+  assert.ok(html.indexOf("Porównanie ofert") < html.indexOf("Dodatkowy argument do rozmowy"));
+  assert.equal((html.match(/Dodatkowy argument do rozmowy/g) ?? []).length, 2);
+  assert.match(html, /id="table-buy-o1"/);
+  assert.match(html, /id="table-sell-o1"/);
+  assert.match(html, /id="table-buy-o2"/);
+  assert.match(html, /id="table-sell-o2"/);
+  assert.doesNotMatch(html, /kurs kupna banku|kurs sprzedaży banku/i);
   assert.match(html, /375[\s\u00a0]170,00 zł/);
   assert.doesNotMatch(html, /przelicz ranking|Ranking aktualny|2\. miejsce|najtaniej/);
   assert.equal((html.match(/quote-row-best/g) ?? []).length, 1);
