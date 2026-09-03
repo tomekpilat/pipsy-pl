@@ -48,8 +48,8 @@ test("server-renders the pipsy calculator at its own route", async () => {
   assert.match(html, /Wspólny wariant negocjacji/);
   assert.ok(html.indexOf("Oferty") < html.indexOf("Wspólny wariant negocjacji"));
   assert.ok(html.indexOf("Wspólny wariant negocjacji") < html.indexOf("Porównanie ofert"));
-  assert.ok(html.indexOf("Porównanie ofert") < html.indexOf("Dodatkowy argument do rozmowy"));
-  assert.equal((html.match(/Dodatkowy argument do rozmowy/g) ?? []).length, 2);
+  assert.doesNotMatch(html, /Dodatkowy argument do rozmowy|offer-skew-panel/);
+  assert.equal((html.match(/offer-skew-note/g) ?? []).length, 2);
   assert.match(html, /id="table-buy-o1"/);
   assert.match(html, /id="table-sell-o1"/);
   assert.match(html, /id="table-buy-o2"/);

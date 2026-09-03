@@ -331,18 +331,10 @@ export default function Home() {
                   <label><span>prow. %</span><input inputMode="decimal" value={result.offer.commissionPct} onChange={(event) => updateOffer(result.offer.id, "commissionPct", event.target.value)} placeholder="0" /></label>
                   <label><span>prow. zł</span><input inputMode="decimal" value={result.offer.fixedFee} onChange={(event) => updateOffer(result.offer.id, "fixedFee", event.target.value)} placeholder="0" /></label>
                   <label><span>przelew zł</span><input inputMode="decimal" value={result.offer.transferFee} onChange={(event) => updateOffer(result.offer.id, "transferFee", event.target.value)} placeholder="0" /></label>
+                  <label><span>kurs kupna</span><input id={`table-buy-${result.offer.id}`} aria-label={`Kurs kupna — ${result.offer.name || "oferta bez nazwy"}`} inputMode="decimal" value={result.offer.tableBuy} onChange={(event) => updateOffer(result.offer.id, "tableBuy", event.target.value)} placeholder="—" /></label>
+                  <label><span>kurs sprzedaży</span><input id={`table-sell-${result.offer.id}`} aria-label={`Kurs sprzedaży — ${result.offer.name || "oferta bez nazwy"}`} inputMode="decimal" value={result.offer.tableSell} onChange={(event) => updateOffer(result.offer.id, "tableSell", event.target.value)} placeholder="—" /></label>
                 </div>
-                <section className="offer-skew-panel" aria-labelledby={`skew-${result.offer.id}`}>
-                  <div className="offer-skew-heading">
-                    <span>Dodatkowy argument do rozmowy</span>
-                    <strong id={`skew-${result.offer.id}`}>{result.offer.name || "oferta bez nazwy"}</strong>
-                  </div>
-                  <div className="offer-skew-fields">
-                    <label><span>kurs kupna</span><input id={`table-buy-${result.offer.id}`} aria-label={`Kurs kupna — ${result.offer.name || "oferta bez nazwy"}`} inputMode="decimal" value={result.offer.tableBuy} onChange={(event) => updateOffer(result.offer.id, "tableBuy", event.target.value)} placeholder="—" /></label>
-                    <label><span>kurs sprzedaży</span><input id={`table-sell-${result.offer.id}`} aria-label={`Kurs sprzedaży — ${result.offer.name || "oferta bez nazwy"}`} inputMode="decimal" value={result.offer.tableSell} onChange={(event) => updateOffer(result.offer.id, "tableSell", event.target.value)} placeholder="—" /></label>
-                  </div>
-                  <p>{tableSkew || "Wpisz kurs kupna i sprzedaży tej oferty — pokażemy, czy jej tabela jest przesunięta przeciw Tobie."}</p>
-                </section>
+                <p className={`offer-skew-note ${tableSkew ? "" : "empty"}`} aria-live="polite">{tableSkew || "Wpisz kurs kupna i sprzedaży, aby sprawdzić asymetrię tej oferty."}</p>
                 <div className="offer-scenario">
                   <div className="scenario-heading">
                     <div><span>Warianty tej oferty</span><small>Wybrany wariant {pips(comparisonPips)} jest porównywany między wszystkimi ofertami.</small></div>
