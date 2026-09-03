@@ -299,7 +299,8 @@ export default function Home() {
                 : Number.NaN;
               return { pips: variantPips, rate: variantRate, quote, difference };
             });
-            const customVariantVisible = Number.isFinite(comparisonPips) && comparisonPips > 0 && !variantQuotes.some((variant) => variant.pips === comparisonPips);
+            const comparisonVariantVisible = Number.isFinite(comparisonPips) && comparisonPips > 0;
+            const otherVariantQuotes = variantQuotes.filter((variant) => variant.pips !== comparisonPips);
             const offerScript = result.valid && Number.isFinite(negotiatedRate)
               ? `${model.buy ? "Mam do kupienia" : "Mam do sprzedania"} ${model.amount.toLocaleString("pl-PL")} ${CURRENCY_WORDS[currency]}, transakcja dziś. Rynek jest na ${spokenRate(model.mid)}, a Państwa kurs to ${spokenRate(result.rate)} — ${Math.round(result.effectivePips)} pipsów efektywnie. Proszę o ${spokenRate(negotiatedRate)}, czyli poprawę o ${Math.round(comparisonPips)} pipsów. Po prowizjach daje to ${Math.round(negotiatedQuote.effectivePips)} pipsów i ${money(negotiatedQuote.total, 0)} łącznie.`
               : "Uzupełnij kurs oferty, aby otrzymać gotowy skrypt rozmowy.";
@@ -337,18 +338,18 @@ export default function Home() {
                       <div data-label="pipsy efektywnie"><span className={`quote-grade grade-${grade?.tone ?? "neutral"}`}>{result.valid ? `${Math.round(result.effectivePips)} pips · ${grade?.label}` : "— · brak oceny"}</span></div>
                       <div className="quote-amount" data-label="ostateczna kwota"><strong>{result.valid ? money(result.total) : "—"}</strong><small>{!result.valid ? "wpisz kurs" : isBest ? (model.buy ? "najniższy koszt" : "najwyższy przychód") : Number.isFinite(deltaFromBest) ? `${model.buy ? "+" : "−"}${money(deltaFromBest, 0)} względem najlepszej oferty` : "brak porównania"}</small></div>
                     </div>
-                    {variantQuotes.map((variant) => <div className={`quote-row quote-row-calculated ${comparisonPips === variant.pips ? "active" : ""}`} key={variant.pips}>
+                    {comparisonVariantVisible && <div className="quote-row quote-row-calculated active">
+                      <div data-label="kurs"><small>wspólny wariant</small><strong>{rate4(negotiatedRate)}</strong></div>
+                      <div data-label="zmiana"><strong className="quote-change">{model.buy ? "−" : "+"}{pips(comparisonPips)}</strong></div>
+                      <div data-label="pipsy efektywnie"><strong>{pips(negotiatedQuote.effectivePips)}</strong></div>
+                      <div className="quote-amount" data-label="ostateczna kwota"><strong>{money(negotiatedQuote.total)}</strong><small>{money(Math.abs(negotiatedDifference), 0)} {negotiatedDifference >= 0 ? "lepiej" : "gorzej"} od oferty</small></div>
+                    </div>}
+                    {otherVariantQuotes.map((variant) => <div className="quote-row quote-row-calculated" key={variant.pips}>
                       <div data-label="kurs"><small>wariant {variant.pips} pips</small><strong>{rate4(variant.rate)}</strong></div>
                       <div data-label="zmiana"><strong className="quote-change">{model.buy ? "−" : "+"}{pips(variant.pips)}</strong></div>
                       <div data-label="pipsy efektywnie"><strong>{pips(variant.quote.effectivePips)}</strong></div>
                       <div className="quote-amount" data-label="ostateczna kwota"><strong>{money(variant.quote.total)}</strong><small>{money(variant.difference, 0)} lepiej od oferty</small></div>
                     </div>)}
-                    {customVariantVisible && <div className="quote-row quote-row-calculated active">
-                      <div data-label="kurs"><small>wspólny wariant</small><strong>{rate4(negotiatedRate)}</strong></div>
-                      <div data-label="zmiana"><strong>{model.buy ? "−" : "+"}{pips(comparisonPips)}</strong></div>
-                      <div data-label="pipsy efektywnie"><strong>{pips(negotiatedQuote.effectivePips)}</strong></div>
-                      <div className="quote-amount" data-label="ostateczna kwota"><strong>{money(negotiatedQuote.total)}</strong><small>{money(Math.abs(negotiatedDifference), 0)} {negotiatedDifference >= 0 ? "lepiej" : "gorzej"} od oferty</small></div>
-                    </div>}
                   </div>
                   <button className="apply-quote-button" type="button" disabled={!result.valid || !Number.isFinite(negotiatedRate) || negotiatedRate <= 0 || Math.abs(negotiatedRate - result.rate) < 0.0000001} onClick={() => {
                       updateOffer(result.offer.id, "rate", rate4(negotiatedRate));
