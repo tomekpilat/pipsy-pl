@@ -76,7 +76,7 @@ test("server-renders the pipsy calculator at its own route", async () => {
   assert.equal((html.match(/wariant 25 pips/g) ?? []).length, 0);
   assert.ok(html.indexOf("wspólny wariant") < html.indexOf("wariant <!-- -->10<!-- --> pips"));
   assert.equal((html.match(/quote-row-comparison-best/g) ?? []).length, 1);
-  assert.equal((html.match(/comparison-winner-badge/g) ?? []).length, 1);
+  assert.doesNotMatch(html, /comparison-winner-badge/);
   assert.match(html, /najlepsza przy/);
   assert.match(html, /względem najlepszej przy/);
   assert.doesNotMatch(html, /Wybierz (?:10|25|50) pips dla wszystkich ofert/);

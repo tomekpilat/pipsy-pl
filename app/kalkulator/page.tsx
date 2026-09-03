@@ -360,10 +360,9 @@ export default function Home() {
                       <div data-label="zmiana"><strong className="quote-change">{model.buy ? "−" : "+"}{pips(comparisonPips)}</strong></div>
                       <div data-label="pipsy efektywnie"><strong>{pips(negotiatedQuote.effectivePips)}</strong></div>
                       <div className="quote-amount" data-label="ostateczna kwota">
-                        {isBestComparison && <span className="comparison-winner-badge">✓ najlepsza przy {pips(comparisonPips)}</span>}
                         <strong>{money(negotiatedQuote.total)}</strong>
                         <small>{isBestComparison
-                          ? `${model.buy ? "najniższa kwota" : "najwyższa kwota"} dla wspólnego wariantu`
+                          ? `✓ najlepsza przy ${pips(comparisonPips)}`
                           : Number.isFinite(comparisonDeltaFromBest)
                             ? `${model.buy ? "+" : "−"}${money(comparisonDeltaFromBest, 0)} względem najlepszej przy ${pips(comparisonPips)}`
                             : `${money(Math.abs(negotiatedDifference), 0)} ${negotiatedDifference >= 0 ? "lepiej" : "gorzej"} od oferty`}</small>
